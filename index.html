@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Astra Arcana / Celestial Atlas</title>
+<meta name="description" content="A unified astrological platform — eight oracles, astronomical engine, cartography, ritual." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<canvas id="starfield" aria-hidden="true"></canvas>
+
+<header class="topbar">
+  <div class="topbar__inner">
+    <a class="brand" href="#top">
+      <span class="brand__glyph" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1">
+          <circle cx="12" cy="12" r="10.5"/><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.5"/>
+          <line x1="12" y1="0.5" x2="12" y2="23.5"/><line x1="0.5" y1="12" x2="23.5" y2="12"/>
+        </svg>
+      </span>
+      <span class="brand__name">ASTRA / ARCANA</span>
+    </a>
+    <nav class="topnav">
+      <a href="#oracles">Oracles</a>
+      <a href="#engine">Engine</a>
+      <a href="#cartography">Cartography</a>
+      <a href="#ritual">Ritual</a>
+      <a href="#spec">Spec</a>
+    </nav>
+    <div class="topbar__meta">
+      <button type="button" class="apikey-trigger" id="apiKeyTrigger" aria-expanded="false" aria-controls="apiKeyPop" title="Activate live oracle readings">
+        <span class="dot" id="apiKeyDot"></span>
+        <span class="mono mono--small" id="apiKeyStatus">SAMPLE MODE</span>
+      </button>
+      <div class="apikey-pop" id="apiKeyPop" role="dialog" aria-label="Anthropic API key" hidden>
+        <header class="apikey-pop__head">
+          <span class="mono mono--small">CLAUDE‑SONNET‑4 / API KEY</span>
+          <button class="apikey-pop__close" type="button" id="apiKeyClose" aria-label="Close">✕</button>
+        </header>
+        <p class="apikey-pop__note">Stored in this browser's localStorage only. Live readings stream from <code>api.anthropic.com</code> directly. Bring your own key.</p>
+        <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off" spellcheck="false" />
+        <div class="apikey-pop__actions">
+          <button type="button" class="btn btn--ghost mono mono--small" id="apiKeyClear">CLEAR</button>
+          <button type="button" class="btn btn--solid" id="apiKeySave">SAVE &amp; ACTIVATE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero__grid">
+      <div class="hero__sidekick">
+        <div class="eyebrow"><span class="bar"></span>CELESTIAL ATLAS · MULTI-AGENT COSMOGRAPHY</div>
+        <p class="mono mono--small">QUOD SUPRA EST,<br>SICUT QUOD INFRA</p>
+      </div>
+
+      <div class="hero__main">
+        <h1 class="display">
+          <span class="display__line">Astra</span>
+          <span class="display__line display__line--italic">Arcana</span>
+        </h1>
+        <p class="lede">
+          A unified astrological platform — four conversational oracles, an in-browser astronomical engine, two cartographic experiences, and two embodied rituals. Hellenistic tradition meets modern Western astrology, real-time astrocartography, and an ancient fire ritual.
+        </p>
+        <div class="hero__cta">
+          <a class="btn btn--solid" href="#oracles">Begin reading <span aria-hidden="true">→</span></a>
+          <a class="btn btn--ghost" href="#engine">Read the spec</a>
+        </div>
+      </div>
+
+      <aside class="hero__panel" aria-label="System summary">
+        <div class="panel">
+          <div class="panel__header"><span class="mono mono--small">SYS / 01</span><span class="mono mono--small">→</span></div>
+          <dl class="kv">
+            <div><dt>Status</dt><dd>Live · May 2026</dd></div>
+            <div><dt>Model</dt><dd>claude‑sonnet‑4</dd></div>
+            <div><dt>Stack</dt><dd>React 18 · Canvas · Web Audio</dd></div>
+            <div><dt>Modules</dt><dd>8 oracles &amp; tools</dd></div>
+            <div><dt>Engine</dt><dd>Schlyter · ±1° / 1900–2100</dd></div>
+            <div><dt>Footprint</dt><dd>~1,610 LOC · single file</dd></div>
+          </dl>
+        </div>
+
+        <div class="panel panel--accent">
+          <div class="panel__header"><span class="mono mono--small">SKY / NOW</span><span class="mono mono--small" id="liveTime">--:--</span></div>
+          <ul class="ticker">
+            <li><span class="glyph">☉</span><span>Sun</span><span class="mono" data-sky="sun">— Tau 16°</span></li>
+            <li><span class="glyph">☾</span><span>Moon</span><span class="mono" data-sky="moon">— Lib 04°</span></li>
+            <li><span class="glyph">☿</span><span>Mercury</span><span class="mono" data-sky="mercury">— Tau 02° ℞</span></li>
+            <li><span class="glyph">♀</span><span>Venus</span><span class="mono" data-sky="venus">— Ari 28°</span></li>
+            <li><span class="glyph">♂</span><span>Mars</span><span class="mono" data-sky="mars">— Leo 11°</span></li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+
+    <div class="hero__rule">
+      <span class="mono mono--small">↓ EIGHT EXPERIENCES · ONE BIRTH PROFILE</span>
+    </div>
+  </section>
+
+
+  <!-- BIRTH PROFILE -->
+  <section class="profile" id="profile">
+    <div class="section__head">
+      <span class="section__num">§ 01</span>
+      <h2 class="section__title">Birth Profile</h2>
+      <p class="section__sub">One source of truth, persisted across every reading.</p>
+    </div>
+
+    <form class="profile__form" id="profileForm" novalidate>
+      <label class="field">
+        <span class="field__label mono mono--small">NAME / OPTIONAL</span>
+        <input type="text" name="name" placeholder="Astra" autocomplete="given-name" />
+      </label>
+      <label class="field">
+        <span class="field__label mono mono--small">DATE OF BIRTH</span>
+        <input type="date" name="birthDate" value="1992-03-21" />
+      </label>
+      <label class="field">
+        <span class="field__label mono mono--small">TIME (24H)</span>
+        <input type="time" name="birthTime" value="07:42" />
+      </label>
+      <label class="field">
+        <span class="field__label mono mono--small">CITY</span>
+        <select name="cityIdx" id="cityIdx">
+          <option value="0">London · UK</option>
+          <option value="1">New York · USA</option>
+          <option value="2">Los Angeles · USA</option>
+          <option value="3">Paris · France</option>
+          <option value="4">Berlin · Germany</option>
+          <option value="5">Lisbon · Portugal</option>
+          <option value="6">Tokyo · Japan</option>
+          <option value="7">Sydney · Australia</option>
+          <option value="8">Mumbai · India</option>
+          <option value="9">São Paulo · Brazil</option>
+          <option value="10">Cape Town · South Africa</option>
+          <option value="11">Mexico City · Mexico</option>
+        </select>
+      </label>
+      <button type="submit" class="btn btn--solid btn--field">Save profile</button>
+    </form>
+
+    <p class="profile__note mono mono--small" id="profileNote">PERSISTED · LOCAL STORAGE</p>
+  </section>
+
+
+  <!-- ORACLES GRID -->
+  <section class="oracles" id="oracles">
+    <div class="section__head">
+      <span class="section__num">§ 02</span>
+      <h2 class="section__title">Eight Modules</h2>
+      <p class="section__sub">Four oracles. Two maps. Two rituals. Each its own register.</p>
+    </div>
+
+    <div class="grid">
+
+      <article class="card" data-tone="amber" data-oracle="natal" tabindex="0" role="button" aria-label="Open Natal Chart oracle">
+        <header class="card__head">
+          <span class="card__glyph">☉</span>
+          <span class="card__num mono mono--small">N · 01</span>
+        </header>
+        <h3 class="card__title">Natal Chart</h3>
+        <p class="card__desc">Modern Western tropical reading covering Sun, Moon, Rising, key placements, and life themes.</p>
+        <footer class="card__foot mono mono--small">
+          <span>4 PARAGRAPHS</span><span>→</span>
+        </footer>
+      </article>
+
+      <article class="card" data-tone="cyan" data-oracle="daily" tabindex="0" role="button" aria-label="Open Daily Guide oracle">
+        <header class="card__head">
+          <span class="card__glyph">☀</span>
+          <span class="card__num mono mono--small">N · 02</span>
+        </header>
+        <h3 class="card__title">Daily Guide</h3>
+        <p class="card__desc">Today's planetary weather translated into personal energy, love, career, and a closing note.</p>
+        <footer class="card__foot mono mono--small">
+          <span>3 PARAGRAPHS</span><span>→</span>
+        </footer>
+      </article>
+
+      <article class="card" data-tone="rose" data-oracle="synastry" tabindex="0" role="button" aria-label="Open Synastry Weaver oracle">
+        <header class="card__head">
+          <span class="card__glyph">⚭</span>
+          <span class="card__num mono mono--small">N · 03</span>
+        </header>
+        <h3 class="card__title">Synastry Weaver</h3>
+        <p class="card__desc">Compatibility across chemistry, communication, emotional bond, and friction — closes with a score.</p>
+        <footer class="card__foot mono mono--small">
+          <span>4 SECT + SCORE</span><span>→</span>
+        </footer>
+      </article>
+
+      <article class="card" data-tone="amber" data-oracle="hellenistic" tabindex="0" role="button" aria-label="Open Hellenistic oracle">
+        <header class="card__head">
+          <span class="card__glyph">Ω</span>
+          <span class="card__num mono mono--small">A · 01</span>
+        </header>
+        <h3 class="card__title">Hellenistic</h3>
+        <p class="card__desc">Ptolemy, Vettius Valens, Dorotheus — whole‑sign houses, sect, lots of Fortune and Spirit, profections.</p>
+        <footer class="card__foot mono mono--small">
+          <span>4 DENSE PARAS</span><span>→</span>
+        </footer>
+      </article>
+
+      <article class="card" data-tone="cyan" data-oracle="cartography" tabindex="0" role="button" aria-label="Open Astrocartography tool">
+        <header class="card__head">
+          <span class="card__glyph">⊕</span>
+          <span class="card__num mono mono--small">M · 01</span>
+        </header>
+        <h3 class="card__title">Astrocartography</h3>
+        <p class="card__desc">Cast the chart across Earth. MC / AC solid, IC / DC dashed. Toggle per‑planet line groups.</p>
+        <footer class="card__foot mono mono--small">
+          <span>WORLD MAP</span><span>→</span>
+        </footer>
+      </article>
+
+      <article class="card" data-tone="amber" data-oracle="transit" tabindex="0" role="button" aria-label="Open Transit Tracker">
+        <header class="card__head">
+          <span class="card__glyph">☄</span>
+          <span class="card__num mono mono--small">T · 01</span>
+        </header>
+        <h3 class="card__title">Transit Tracker</h3>
+        <p class="card__desc">Today's sky vs natal. Five‑aspect detection, retrograde flags, an AI‑narrated weekly reading.</p>
+        <footer class="card__foot mono mono--small">
+          <span>LIVE ASPECTS</span><span>→</span>
+        </footer>
+      </article>
+
+      <article class="card" data-tone="cyan" data-oracle="atlas" tabindex="0" role="button" aria-label="Open Atlas Oracle">
+        <header class="card__head">
+          <span class="card__glyph">⊙</span>
+          <span class="card__num mono mono--small">M · 02</span>
+        </header>
+        <h3 class="card__title">Atlas Oracle</h3>
+        <p class="card__desc">Choose which lines matter. Ask the Oracle where on Earth they fall most kindly. By region.</p>
+        <footer class="card__foot mono mono--small">
+          <span>4 PARAGRAPHS</span><span>→</span>
+        </footer>
+      </article>
+
+      <article class="card" data-tone="rose" data-oracle="meditation" tabindex="0" role="button" aria-label="Open Voice Meditation">
+        <header class="card__head">
+          <span class="card__glyph">☾</span>
+          <span class="card__num mono mono--small">R · 01</span>
+        </header>
+        <h3 class="card__title">Voice Meditation</h3>
+        <p class="card__desc">Six celestial themes. The Oracle composes a script; the device speaks while a breathing orb keeps cosmic time.</p>
+        <footer class="card__foot mono mono--small">
+          <span>6 BEATS · 9s ORB</span><span>→</span>
+        </footer>
+      </article>
+
+      <article class="card card--wide" data-tone="amber" data-oracle="molybdomancy" tabindex="0" role="button" aria-label="Open Molybdomancy ritual">
+        <header class="card__head">
+          <span class="card__glyph">◐</span>
+          <span class="card__num mono mono--small">R · 02</span>
+        </header>
+        <h3 class="card__title">Molybdomancy</h3>
+        <p class="card__desc">Folk divination by molten lead. A three‑step ritual; an animated parametric blob morphs through ten archetypal forms — Bird, Hand, Serpent, Heart, Ship, Tree, Moon, Wolf, Cross, Mountains. On Stop, the lead trembles, cracks, and cools.</p>
+        <footer class="card__foot mono mono--small">
+          <span>5 SECT + FIRE AUDIO</span><span>→</span>
+        </footer>
+      </article>
+
+    </div>
+  </section>
+
+
+  <!-- ENGINE -->
+  <section class="engine" id="engine">
+    <div class="section__head">
+      <span class="section__num">§ 03</span>
+      <h2 class="section__title">Astronomical Engine</h2>
+      <p class="section__sub">Schlyter's simplified planetary formulas. ±1° accuracy, 1900–2100. No server round‑trips.</p>
+    </div>
+
+    <div class="engine__grid">
+      <div class="engine__copy">
+        <p>Every chart-driven feature draws from one in‑browser engine. Julian Day from Gregorian calendar; Greenwich Mean Sidereal Time; Newton‑Raphson Kepler solver across 6–8 iterations; heliocentric Cartesian coordinates from orbital elements <span class="mono">(N, i, ω, a, e, M)</span>; ecliptic‑to‑equatorial rotation with secular obliquity term.</p>
+        <p>From these primitives the engine derives astrocartography line projection, aspect angular separation against five canonical orbs, and retrograde detection by 24‑hour ecliptic longitude differential.</p>
+
+        <div class="formula">
+          <span class="mono mono--small">MC LINE / λ</span>
+          <code>λ = α − θ</code>
+          <span class="mono mono--small">RISE/SET / H</span>
+          <code>cos H = −tan φ · tan δ</code>
+        </div>
+      </div>
+
+      <table class="aspects">
+        <caption class="mono mono--small">ASPECTS · CALIBRATED ORBS</caption>
+        <thead>
+          <tr><th>Aspect</th><th>Angle</th><th>Orb</th><th>Quality</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="swatch" style="--c:#c8a060"></span>Conjunction</td><td class="mono">0°</td><td class="mono">6°</td><td>Neutral</td></tr>
+          <tr><td><span class="swatch" style="--c:#7cc090"></span>Sextile</td><td class="mono">60°</td><td class="mono">4°</td><td>Soft</td></tr>
+          <tr><td><span class="swatch" style="--c:#e07060"></span>Square</td><td class="mono">90°</td><td class="mono">5°</td><td>Hard</td></tr>
+          <tr><td><span class="swatch" style="--c:#80b8c8"></span>Trine</td><td class="mono">120°</td><td class="mono">5°</td><td>Soft</td></tr>
+          <tr><td><span class="swatch" style="--c:#c870a0"></span>Opposition</td><td class="mono">180°</td><td class="mono">6°</td><td>Hard</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+
+  <!-- ASTROCARTOGRAPHY -->
+  <section class="cartography" id="cartography">
+    <div class="section__head">
+      <span class="section__num">§ 04</span>
+      <h2 class="section__title">Astrocartography</h2>
+      <p class="section__sub">Your chart cast across the Earth. Where each planet asks to be lived through.</p>
+    </div>
+
+    <div class="cart__toolbar mono mono--small">
+      <button class="chip is-on" data-planet="sun">☉ SUN</button>
+      <button class="chip is-on" data-planet="venus">♀ VENUS</button>
+      <button class="chip is-on" data-planet="mars">♂ MARS</button>
+      <button class="chip" data-planet="jupiter">♃ JUPITER</button>
+      <button class="chip" data-planet="saturn">♄ SATURN</button>
+      <span class="cart__legend">— SOLID · MC / AC &nbsp;·&nbsp; --- DASHED · IC / DC</span>
+    </div>
+
+    <div class="cart__map" id="worldMap" aria-label="World map of astrocartography lines"></div>
+  </section>
+
+
+  <!-- TRANSIT -->
+  <section class="transit" id="transit">
+    <div class="section__head">
+      <span class="section__num">§ 05</span>
+      <h2 class="section__title">Transit Tracker</h2>
+      <p class="section__sub">A live sample for today — natal vs. sky.</p>
+    </div>
+
+    <div class="transit__grid">
+      <ul class="aspects-list">
+        <li>
+          <span class="aspects-list__pair"><b>Mars</b> <span class="mono">→</span> Natal <b>Sun</b></span>
+          <span class="aspects-list__type" style="--c:#80b8c8">TRINE 120°</span>
+          <span class="aspects-list__exact mono">orb 1.4°</span>
+        </li>
+        <li>
+          <span class="aspects-list__pair"><b>Saturn</b> <span class="mono">→</span> Natal <b>Moon</b></span>
+          <span class="aspects-list__type" style="--c:#e07060">SQUARE 90°</span>
+          <span class="aspects-list__exact mono">orb 0.7°</span>
+        </li>
+        <li>
+          <span class="aspects-list__pair"><b>Venus</b> <span class="mono">→</span> Natal <b>Mercury</b></span>
+          <span class="aspects-list__type" style="--c:#c8a060">CONJ 0°</span>
+          <span class="aspects-list__exact mono">orb 2.9°</span>
+        </li>
+        <li>
+          <span class="aspects-list__pair"><b>Jupiter</b> <span class="mono">→</span> Natal <b>Venus</b></span>
+          <span class="aspects-list__type" style="--c:#7cc090">SEXTILE 60°</span>
+          <span class="aspects-list__exact mono">orb 3.1°</span>
+        </li>
+        <li>
+          <span class="aspects-list__pair"><b>Mercury ℞</b> <span class="mono">→</span> Natal <b>Saturn</b></span>
+          <span class="aspects-list__type" style="--c:#c870a0">OPP 180°</span>
+          <span class="aspects-list__exact mono">orb 4.2°</span>
+        </li>
+      </ul>
+
+      <article class="reading">
+        <header class="reading__head">
+          <span class="mono mono--small">ORACLE READING / WEEK 19 · 2026</span>
+          <span class="dot dot--live" aria-hidden="true"></span>
+        </header>
+        <p>Mars trine your natal Sun gives the week its accelerant — a window where ambition and identity move together rather than at odds. Begin what you have been hesitating over; the sky is unusually willing.</p>
+        <p>Saturn square the Moon is the week's friction. An emotional structure you have been deferring asks to be looked at. Not a punishment — an audit. Sit with the discomfort long enough to name what the structure was protecting.</p>
+        <p>Mercury retrograde opposite Saturn invites a slow, careful conversation rather than a fast one. Send the long email. Re‑read the contract. The sky rewards revision this week, not announcement.</p>
+        <button class="btn btn--ghost btn--regen mono mono--small" type="button">↻ REGENERATE READING</button>
+      </article>
+    </div>
+  </section>
+
+
+  <!-- RITUAL: MEDITATION + MOLYBDOMANCY -->
+  <section class="ritual" id="ritual">
+    <div class="section__head">
+      <span class="section__num">§ 06</span>
+      <h2 class="section__title">Embodied Rituals</h2>
+      <p class="section__sub">Two practices the screen does not merely describe — it performs.</p>
+    </div>
+
+    <div class="ritual__grid">
+
+      <!-- MEDITATION -->
+      <article class="ritual__card">
+        <header class="ritual__head">
+          <span class="card__glyph">☾</span>
+          <h3>Voice Meditation</h3>
+          <span class="mono mono--small">R · 01</span>
+        </header>
+
+        <div class="orb-stage">
+          <div class="orb" id="orb"></div>
+          <div class="orb__pulse" aria-hidden="true"></div>
+        </div>
+
+        <div class="orb__caption">
+          <span class="mono mono--small" id="breathLabel">PRESS BEGIN</span>
+        </div>
+
+        <ul class="theme-list mono mono--small" id="themeList">
+          <li class="is-on" data-theme="lunar">LUNAR TIDE</li>
+          <li data-theme="solar">SOLAR FLAME</li>
+          <li data-theme="venus">VENUSIAN BLOOM</li>
+          <li data-theme="saturn">SATURNIAN STONE</li>
+          <li data-theme="cosmic">COSMIC ALIGNMENT</li>
+          <li data-theme="today">TODAY'S SKY</li>
+        </ul>
+
+        <div class="ritual__cta">
+          <button class="btn btn--solid" id="orbStart">Begin meditation</button>
+          <span class="mono mono--small">9‑SEC CYCLE · 6 BEATS</span>
+        </div>
+      </article>
+
+      <!-- MOLYBDOMANCY -->
+      <article class="ritual__card ritual__card--lead">
+        <header class="ritual__head">
+          <span class="card__glyph">◐</span>
+          <h3>Molybdomancy</h3>
+          <span class="mono mono--small">R · 02</span>
+        </header>
+
+        <canvas id="leadBlob" width="540" height="420" aria-label="Molten lead blob"></canvas>
+
+        <p class="proverb">
+          <i>Who reads the lead reads the heart.</i><br>
+          <span class="mono mono--small">— A FOLK SAYING</span>
+        </p>
+
+        <ul class="archetypes mono mono--small" id="archetypeList">
+          <li class="is-on">BIRD</li><li>HAND</li><li>SERPENT</li><li>HEART</li>
+          <li>SHIP</li><li>TREE</li><li>MOON</li><li>WOLF</li><li>CROSS</li><li>MOUNTAINS</li>
+        </ul>
+
+        <div class="ritual__cta">
+          <button class="btn btn--solid" id="leadStop">Stop the lead</button>
+          <button class="btn btn--ghost mono mono--small" id="leadReset">↻ RESET</button>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+
+  <!-- SPEC -->
+  <section class="spec" id="spec">
+    <div class="section__head">
+      <span class="section__num">§ 07</span>
+      <h2 class="section__title">Specification</h2>
+      <p class="section__sub">The architecture, in one passage.</p>
+    </div>
+
+    <div class="spec__grid">
+      <div class="spec__col">
+        <h4 class="mono mono--small">UI · FRAMEWORK</h4>
+        <p>React 18 with hooks · single‑file JSX artifact</p>
+      </div>
+      <div class="spec__col">
+        <h4 class="mono mono--small">AI · MODEL</h4>
+        <p>claude-sonnet-4-20250514 · max_tokens 1500</p>
+      </div>
+      <div class="spec__col">
+        <h4 class="mono mono--small">ENGINE</h4>
+        <p>Custom Schlyter implementation · ecliptic + equatorial</p>
+      </div>
+      <div class="spec__col">
+        <h4 class="mono mono--small">ANIMATION</h4>
+        <p>HTML Canvas 2D · 60 fps · CSS keyframes · SVG</p>
+      </div>
+      <div class="spec__col">
+        <h4 class="mono mono--small">VOICE</h4>
+        <p>Web Speech API · automatic English voice selection</p>
+      </div>
+      <div class="spec__col">
+        <h4 class="mono mono--small">AUDIO</h4>
+        <p>Web Audio API · procedural noise + biquad filters</p>
+      </div>
+      <div class="spec__col">
+        <h4 class="mono mono--small">PERSISTENCE</h4>
+        <p>window.storage · async load/save · ~5 MB ceiling</p>
+      </div>
+      <div class="spec__col">
+        <h4 class="mono mono--small">TYPOGRAPHY</h4>
+        <p>Cinzel · EB Garamond · Cormorant · Cormorant SC</p>
+      </div>
+    </div>
+
+    <div class="roadmap">
+      <h3 class="roadmap__title">Roadmap</h3>
+
+      <ol class="roadmap__list">
+        <li>
+          <span class="mono mono--small">v1.0 · LIVE · MAY 2026</span>
+          <p>Eight modules · shared profile · Schlyter engine · five‑aspect detection · voice synthesis · procedural audio.</p>
+        </li>
+        <li>
+          <span class="mono mono--small">v1.5 · Q3 2026</span>
+          <p>Multi‑turn oracle conversations · reading history · aspect timing predictions · geocoded city input · ElevenLabs voice · Stripe paywall.</p>
+        </li>
+        <li>
+          <span class="mono mono--small">v2.0 · Q1 2027</span>
+          <p>React Native iOS / Android · full chart‑vs‑chart synastry · annual PDF transit report · multi‑user shared charts · localization (ES, DE, BG, PT).</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="footer__inner">
+    <div>
+      <div class="brand brand--small">
+        <span class="brand__glyph" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1">
+            <circle cx="12" cy="12" r="10.5"/><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.5"/>
+          </svg>
+        </span>
+        <span class="brand__name">ASTRA / ARCANA</span>
+      </div>
+      <p class="footer__tag mono mono--small">CELESTIAL ATLAS · MULTI‑AGENT COSMOGRAPHY</p>
+    </div>
+
+    <ul class="footer__cols">
+      <li>
+        <span class="mono mono--small">ORACLES</span>
+        <a href="#oracles">Natal</a>
+        <a href="#oracles">Daily</a>
+        <a href="#oracles">Synastry</a>
+        <a href="#oracles">Hellenistic</a>
+      </li>
+      <li>
+        <span class="mono mono--small">TOOLS</span>
+        <a href="#cartography">Astrocartography</a>
+        <a href="#transit">Transit Tracker</a>
+        <a href="#oracles">Atlas Oracle</a>
+      </li>
+      <li>
+        <span class="mono mono--small">RITUAL</span>
+        <a href="#ritual">Voice Meditation</a>
+        <a href="#ritual">Molybdomancy</a>
+      </li>
+    </ul>
+
+    <p class="footer__sig mono mono--small">QUOD SUPRA EST, SICUT QUOD INFRA · © MMXXVI</p>
+  </div>
+</footer>
+
+<!-- Oracle drawer -->
+<aside class="drawer" id="drawer" aria-hidden="true" aria-modal="true" role="dialog" aria-labelledby="drawerTitle">
+  <div class="drawer__backdrop" data-drawer-close></div>
+  <div class="drawer__panel">
+    <header class="drawer__head">
+      <span class="drawer__glyph" id="drawerGlyph">☉</span>
+      <div class="drawer__meta">
+        <span class="drawer__eyebrow mono mono--small" id="drawerEyebrow">N · 01 · ORACLE</span>
+        <h2 class="drawer__title" id="drawerTitle">Natal Chart</h2>
+      </div>
+      <button class="drawer__close" type="button" aria-label="Close" data-drawer-close>
+        <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4">
+          <line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/>
+        </svg>
+      </button>
+    </header>
+
+    <div class="drawer__signal mono mono--small" id="drawerSignal">
+      <span class="dot"></span>
+      <span id="drawerStatus">SAMPLE READING · LIVE API IN SPEC §5</span>
+    </div>
+
+    <div class="drawer__body" id="drawerBody"></div>
+
+    <footer class="drawer__foot">
+      <button class="btn btn--ghost mono mono--small" id="drawerRegen" type="button">↻ NEW READING</button>
+      <button class="btn btn--solid" id="drawerAction" type="button" hidden>View on page</button>
+    </footer>
+  </div>
+</aside>
+
+<script src="app.js" defer></script>
+</body>
+</html>
