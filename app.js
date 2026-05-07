@@ -456,8 +456,16 @@
       try {
         const chart = getNatalChart();
         if (!chart) throw new Error('Could not compute chart');
-        await generatePdfReport(chart);
-        flashNote(`PDF DOWNLOADED · ${(chart.profile.name || 'NATIVE').toUpperCase()}`);
+        let reading = null;
+        if (readApiKey()) {
+          if (submitBtn) submitBtn.textContent = 'Channelling reading...';
+          flashNote('CHANNELLING NATAL READING · CLAUDE-SONNET-4 · ~10 SEC');
+          reading = await fetchPdfNatalReading(chart);
+        }
+        if (submitBtn) submitBtn.textContent = 'Building PDF...';
+        flashNote('BUILDING PDF REPORT ...');
+        await generatePdfReport(chart, reading);
+        flashNote(`PDF DOWNLOADED · ${(chart.profile.name || 'NATIVE').toUpperCase()}${reading ? ' · WITH READING' : ''}`);
       } catch (err) {
         flashNote(`PDF BUILD FAILED · ${(err.message || '').toUpperCase()}`, 'warn');
       } finally {
@@ -503,7 +511,332 @@
     return out;
   }
 
-  async function generatePdfReport(chart) {
+  function hexToRgb(hex) {
+    const m = hex.replace('#', '').match(/.{2}/g);
+    return [parseInt(m[0], 16), parseInt(m[1], 16), parseInt(m[2], 16)];
+  }
+
+  function parseSvgPath(d) {
+    const tokens = d.match(/[MLZ]|-?\d+(?:\.\d+)?/g) || [];
+    const pts = [];
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i];
+      if (t === 'M' || t === 'L') {
+        pts.push([parseFloat(tokens[i + 1]), parseFloat(tokens[i + 2])]);
+        i += 2;
+      }
+    }
+    return pts;
+  }
+
+  const CONTINENT_PATHS = [
+    "M -168 70 L -160 71 L -140 72 L -100 75 L -80 75 L -55 70 L -52 60 L -65 50 L -65 45 L -75 38 L -80 30 L -90 28 L -95 30 L -110 30 L -115 25 L -125 35 L -125 50 L -135 58 L -150 60 L -165 60 Z",
+    "M -50 82 L -22 82 L -22 70 L -45 60 L -50 70 Z",
+    "M -82 12 L -70 11 L -55 5 L -45 -5 L -38 -10 L -38 -25 L -55 -38 L -65 -50 L -70 -55 L -75 -52 L -80 -40 L -78 -20 L -82 -5 Z",
+    "M -10 36 L 0 38 L 10 38 L 25 36 L 40 40 L 60 50 L 60 70 L 30 72 L 5 70 L -10 60 L -10 50 Z",
+    "M -18 35 L 10 35 L 30 33 L 42 12 L 50 5 L 52 -5 L 38 -25 L 25 -35 L 18 -35 L 10 -32 L 5 -10 L -10 5 L -18 18 Z",
+    "M 32 30 L 55 28 L 60 18 L 55 12 L 45 14 L 38 22 Z",
+    "M 30 70 L 60 72 L 100 75 L 140 70 L 175 70 L 180 60 L 145 50 L 130 35 L 120 22 L 105 12 L 95 8 L 88 22 L 75 30 L 60 30 L 50 35 L 40 50 L 30 60 Z",
+    "M 70 32 L 88 30 L 90 22 L 80 8 L 72 22 Z",
+    "M 95 5 L 120 8 L 140 -5 L 130 -10 L 110 -8 L 95 -2 Z",
+    "M 113 -12 L 140 -12 L 153 -25 L 150 -38 L 130 -38 L 115 -32 L 113 -22 Z",
+  ];
+
+  const PLANET_ABBR = {
+    sun: 'Su', moon: 'Mo', mercury: 'Me', venus: 'Ve', mars: 'Ma',
+    jupiter: 'Ju', saturn: 'Sa', uranus: 'Ur', neptune: 'Ne',
+  };
+
+  function drawChartWheel(doc, chart, cx, cy, R) {
+    const SIGN_BAND_W = 12;
+    const HOUSE_BAND_W = 7;
+    const PLANET_R_BASE = R - SIGN_BAND_W - HOUSE_BAND_W - 8;
+    const ASPECT_R = PLANET_R_BASE - 8;
+
+    const text   = [22, 24, 32];
+    const accent = [200, 140, 50];
+    const muted  = [140, 134, 118];
+    const muted2 = [200, 195, 180];
+
+    const ascLon = chart.ascendant;
+    const ascSignStart = Math.floor(ascLon / 30) * 30;
+
+    const lonToXY = (lon, r) => {
+      const a = (180 - (lon - ascLon)) * Math.PI / 180;
+      return [cx + r * Math.cos(a), cy - r * Math.sin(a)];
+    };
+
+    doc.setLineWidth(0.5);
+    doc.setDrawColor(muted[0], muted[1], muted[2]);
+    doc.circle(cx, cy, R, 'S');
+    doc.setLineWidth(0.3);
+    doc.circle(cx, cy, R - SIGN_BAND_W, 'S');
+    doc.circle(cx, cy, R - SIGN_BAND_W - HOUSE_BAND_W, 'S');
+    doc.setLineWidth(0.2);
+    doc.setDrawColor(muted2[0], muted2[1], muted2[2]);
+    doc.circle(cx, cy, ASPECT_R, 'S');
+
+    const SIGNS_3 = ['Ari','Tau','Gem','Can','Leo','Vir','Lib','Sco','Sag','Cap','Aqu','Pis'];
+    doc.setLineWidth(0.25);
+    doc.setDrawColor(muted[0], muted[1], muted[2]);
+    for (let i = 0; i < 12; i++) {
+      const lon = i * 30;
+      const [x1, y1] = lonToXY(lon, R);
+      const [x2, y2] = lonToXY(lon, R - SIGN_BAND_W);
+      doc.line(x1, y1, x2, y2);
+      const [lx, ly] = lonToXY(lon + 15, R - SIGN_BAND_W / 2);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(text[0], text[1], text[2]);
+      doc.text(SIGNS_3[i], lx, ly + 1.2, { align: 'center' });
+    }
+
+    doc.setLineWidth(0.15);
+    doc.setDrawColor(muted2[0], muted2[1], muted2[2]);
+    for (let i = 0; i < 12; i++) {
+      const lon = ascSignStart + i * 30;
+      const [x1, y1] = lonToXY(lon, R - SIGN_BAND_W);
+      const [x2, y2] = lonToXY(lon, R - SIGN_BAND_W - HOUSE_BAND_W);
+      doc.line(x1, y1, x2, y2);
+      const [hx, hy] = lonToXY(lon + 15, R - SIGN_BAND_W - HOUSE_BAND_W / 2);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+      doc.setTextColor(muted[0], muted[1], muted[2]);
+      doc.text(String(i + 1), hx, hy + 0.8, { align: 'center' });
+    }
+
+    doc.setDrawColor(accent[0], accent[1], accent[2]);
+    doc.setLineWidth(0.6);
+    const drawAngle = (lon, label) => {
+      const [x1, y1] = lonToXY(lon, R - SIGN_BAND_W);
+      const [x2, y2] = lonToXY(lon, R + 4);
+      doc.line(x1, y1, x2, y2);
+      const [tx, ty] = lonToXY(lon, R + 7);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor(accent[0], accent[1], accent[2]);
+      doc.text(label, tx, ty, { align: 'center' });
+    };
+    drawAngle(ascLon, 'AC');
+    drawAngle(chart.mc, 'MC');
+    drawAngle((ascLon + 180) % 360, 'DC');
+    drawAngle((chart.mc + 180) % 360, 'IC');
+
+    const planetData = ['sun','moon','mercury','venus','mars','jupiter','saturn','uranus','neptune']
+      .map(k => ({ key: k, lon: chart[k].lon, retro: chart[k].retro }))
+      .sort((a, b) => a.lon - b.lon);
+
+    const offsets = new Array(planetData.length).fill(0);
+    for (let i = 1; i < planetData.length; i++) {
+      let diff = planetData[i].lon - planetData[i - 1].lon;
+      if (diff > 180) diff = 360 - diff;
+      if (diff < 7) offsets[i] = offsets[i - 1] + 1;
+    }
+    const placements = planetData.map((p, i) => ({ ...p, r: PLANET_R_BASE - offsets[i] * 5 }));
+
+    doc.setLineWidth(0.15);
+    doc.setDrawColor(muted2[0], muted2[1], muted2[2]);
+    for (const p of placements) {
+      const [x1, y1] = lonToXY(p.lon, R - SIGN_BAND_W - HOUSE_BAND_W);
+      const [x2, y2] = lonToXY(p.lon, p.r + 3);
+      doc.line(x1, y1, x2, y2);
+    }
+
+    doc.setLineWidth(0.25);
+    for (let i = 0; i < placements.length; i++) {
+      for (let j = i + 1; j < placements.length; j++) {
+        let diff = Math.abs(placements[i].lon - placements[j].lon);
+        if (diff > 180) diff = 360 - diff;
+        for (const def of ASPECTS_DEFS) {
+          const off = Math.abs(diff - def.angle);
+          if (off <= def.orb * 0.7) {
+            const c = hexToRgb(def.tone);
+            doc.setDrawColor(c[0], c[1], c[2]);
+            const [ax, ay] = lonToXY(placements[i].lon, ASPECT_R);
+            const [bx, by] = lonToXY(placements[j].lon, ASPECT_R);
+            doc.line(ax, ay, bx, by);
+            break;
+          }
+        }
+      }
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    for (const p of placements) {
+      const [px, py] = lonToXY(p.lon, p.r);
+      doc.setTextColor(text[0], text[1], text[2]);
+      doc.text(PLANET_ABBR[p.key], px, py + 1.1, { align: 'center' });
+      if (p.retro) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6);
+        doc.setTextColor(accent[0], accent[1], accent[2]);
+        doc.text('R', px + 4, py + 1.1, { align: 'center' });
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+      }
+    }
+
+    doc.setDrawColor(muted2[0], muted2[1], muted2[2]);
+    doc.setLineWidth(0.2);
+    doc.line(cx - 2, cy, cx + 2, cy);
+    doc.line(cx, cy - 2, cx, cy + 2);
+  }
+
+  function drawWorldMap(doc, chart, mapX, mapY, mapW, mapH) {
+    const muted = [140, 134, 118];
+    const land  = [228, 224, 212];
+    const landE = [205, 200, 184];
+    const grid  = [220, 215, 200];
+
+    const lonLatToXY = (lon, lat) => [
+      mapX + ((lon + 180) / 360) * mapW,
+      mapY + ((90  - lat) / 180) * mapH,
+    ];
+
+    doc.setFillColor(248, 246, 238);
+    doc.rect(mapX, mapY, mapW, mapH, 'F');
+
+    doc.setDrawColor(grid[0], grid[1], grid[2]);
+    doc.setLineWidth(0.1);
+    for (let lon = -180; lon <= 180; lon += 30) {
+      const [x] = lonLatToXY(lon, 0);
+      doc.line(x, mapY, x, mapY + mapH);
+    }
+    for (let lat = -60; lat <= 60; lat += 30) {
+      const [, y] = lonLatToXY(0, lat);
+      doc.line(mapX, y, mapX + mapW, y);
+    }
+
+    doc.setFillColor(land[0], land[1], land[2]);
+    doc.setDrawColor(landE[0], landE[1], landE[2]);
+    doc.setLineWidth(0.15);
+    for (const path of CONTINENT_PATHS) {
+      const pts = parseSvgPath(path);
+      if (pts.length < 2) continue;
+      const [sx, sy] = lonLatToXY(pts[0][0], pts[0][1]);
+      const deltas = [];
+      for (let i = 1; i < pts.length; i++) {
+        const [x, y] = lonLatToXY(pts[i][0], pts[i][1]);
+        const [px, py] = lonLatToXY(pts[i - 1][0], pts[i - 1][1]);
+        deltas.push([x - px, y - py]);
+      }
+      doc.lines(deltas, sx, sy, [1, 1], 'FD', true);
+    }
+
+    const plotPlanet = (key) => {
+      const p = chart[key];
+      let mcLon = p.ra - chart.gmst;
+      while (mcLon >  180) mcLon -= 360;
+      while (mcLon < -180) mcLon += 360;
+      const c = hexToRgb(PLANET_COLOR[key]);
+      doc.setDrawColor(c[0], c[1], c[2]);
+
+      doc.setLineWidth(0.5);
+      const [xMc] = lonLatToXY(mcLon, 0);
+      doc.line(xMc, mapY, xMc, mapY + mapH);
+
+      let icLon = mcLon + 180;
+      if (icLon >  180) icLon -= 360;
+      if (icLon < -180) icLon += 360;
+      const [xIc] = lonLatToXY(icLon, 0);
+      doc.setLineWidth(0.3);
+      const dashSpan = 1.6;
+      for (let yy = mapY; yy < mapY + mapH; yy += dashSpan * 2) {
+        doc.line(xIc, yy, xIc, Math.min(yy + dashSpan, mapY + mapH));
+      }
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor(c[0], c[1], c[2]);
+      doc.text(`${PLANET_ABBR[key]} MC`, xMc + 1.2, mapY + 4);
+      doc.text(`${PLANET_ABBR[key]} IC`, xIc + 1.2, mapY + mapH - 1.5);
+
+      const tanDec = Math.tan(p.dec * Math.PI / 180);
+      const rise = [], setp = [];
+      for (let lat = -82; lat <= 82; lat += 2) {
+        const cosH = -Math.tan(lat * Math.PI / 180) * tanDec;
+        if (cosH < -1 || cosH > 1) continue;
+        const H = Math.acos(cosH) * 180 / Math.PI;
+        let lonR = mcLon - H, lonS = mcLon + H;
+        lonR = ((lonR + 540) % 360) - 180;
+        lonS = ((lonS + 540) % 360) - 180;
+        rise.push([lonR, lat]);
+        setp.push([lonS, lat]);
+      }
+
+      const drawArc = (pts, dashed) => {
+        if (pts.length < 2) return;
+        const segs = [[]];
+        for (let i = 0; i < pts.length; i++) {
+          if (i > 0 && Math.abs(pts[i][0] - pts[i - 1][0]) > 180) segs.push([]);
+          segs[segs.length - 1].push(pts[i]);
+        }
+        doc.setLineWidth(dashed ? 0.25 : 0.4);
+        for (const seg of segs) {
+          if (seg.length < 2) continue;
+          for (let i = 1; i < seg.length; i++) {
+            if (dashed && (i % 2 === 0)) continue;
+            const [x1, y1] = lonLatToXY(seg[i - 1][0], seg[i - 1][1]);
+            const [x2, y2] = lonLatToXY(seg[i][0], seg[i][1]);
+            doc.line(x1, y1, x2, y2);
+          }
+        }
+      };
+      drawArc(rise, false);
+      drawArc(setp, true);
+    };
+
+    for (const k of ['sun','venus','mars','jupiter','saturn']) plotPlanet(k);
+
+    doc.setDrawColor(muted[0], muted[1], muted[2]);
+    doc.setLineWidth(0.4);
+    doc.rect(mapX, mapY, mapW, mapH, 'S');
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(muted[0], muted[1], muted[2]);
+    for (let lon = -180; lon <= 180; lon += 60) {
+      const [x] = lonLatToXY(lon, 0);
+      const sign = lon > 0 ? '+' : (lon < 0 ? '-' : '');
+      doc.text(`${sign}${Math.abs(lon)}\u00b0`, x, mapY + mapH + 3.5, { align: 'center' });
+    }
+  }
+
+  const PDF_NATAL_SYSTEM = "You are the Natal Chart Oracle of Astra Arcana, a working modern Western astrologer in the lineage of Liz Greene and Steven Forrest. The native's complete chart data is provided.\n\nReturn EXACTLY 4 paragraphs separated by blank lines. No greeting, no preamble, no bullet points, no italics, no questions. Total length 500-650 words.\n\nParagraph 1 - The Self: Sun in sign and modality, Moon in sign, Rising sign and how the chart presents to others. Lead with character.\nParagraph 2 - Mind, Heart, Drive: Mercury (how they think), Venus (how they love), Mars (how they push).\nParagraph 3 - The Long Game: Jupiter and Saturn. Note any tight aspect involving these.\nParagraph 4 - The Generational and the Path: Uranus and Neptune in sign and house. Close with the chart's central life theme.\n\nVoice: grounded, perceptive, unsentimental. Specific to this chart, not generic. Reference signs, houses, and key aspects by name.";
+
+  async function fetchPdfNatalReading(chart) {
+    const apiKey = readApiKey();
+    if (!apiKey) return null;
+    const summary = summarizeChart(chart);
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 2200,
+          system: PDF_NATAL_SYSTEM,
+          messages: [{ role: 'user', content: summary + '\n\nWrite the four-paragraph natal reading now.' }],
+        }),
+      });
+      if (!res.ok) throw new Error('API ' + res.status);
+      const data = await res.json();
+      const txt = (data.content || []).map(b => b.type === 'text' ? b.text : '').join('\n');
+      const paras = txt.split(/\n\s*\n/).map(s => s.trim()).filter(Boolean);
+      return paras.length ? paras : null;
+    } catch (err) {
+      console.error('PDF natal reading failed:', err);
+      return null;
+    }
+  }
+
+  async function generatePdfReport(chart, aiReading) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
     const W = 210, H = 297, M = 22;
@@ -530,7 +863,7 @@
       rule(H - 14);
     }
 
-    const totalPages = 3;
+    const totalPages = 4 + (aiReading && aiReading.length ? 1 : 0);
 
     // ============== PAGE 1 — COVER + PLACEMENTS ==============
     pageFrame(1, totalPages, 'NATAL REPORT');
@@ -610,52 +943,95 @@
       py += 6;
     }
 
-    // ============== PAGE 2 — ASPECTS + ASTROCARTOGRAPHY ==============
+    // ============== PAGE 2 — CHART WHEEL ==============
     doc.addPage();
-    pageFrame(2, totalPages, 'ASPECTS  ·  ASTROCARTOGRAPHY');
+    pageFrame(2, totalPages, 'CHART WHEEL');
 
     setText(text);
     doc.setFont('times', 'normal');
     doc.setFontSize(22);
-    doc.text('Natal Aspects', M, 36);
-    rule(40);
-
-    const aspects = natalAspectsFor(chart, 0.9);
-    let ay = 50;
-    doc.setFontSize(10);
-    for (const a of aspects.slice(0, 16)) {
-      setText(text);
-      doc.setFont('times', 'normal');
-      doc.text(`${cap(a.a)}  ${a.aspect.name.toLowerCase()}  ${cap(a.b)}`, M, ay);
-      setText(muted);
-      doc.setFont('courier', 'normal');
-      const ang = `${a.aspect.angle}°`.padStart(4);
-      doc.text(`${ang}    orb ${a.exact.toFixed(1)}°`, W - M, ay, { align: 'right' });
-      ay += 6;
-    }
-    if (!aspects.length) {
-      setText(muted);
-      doc.setFont('times', 'italic');
-      doc.text('No tight natal aspects under canonical orbs.', M, ay);
-    }
-
-    // Astrocartography
-    ay = Math.max(ay + 14, 160);
-    setText(text);
-    doc.setFont('times', 'normal');
-    doc.setFontSize(22);
-    doc.text('Astrocartography', M, ay);
-    ay += 5;
-    rule(ay);
-    ay += 10;
+    doc.text('Chart Wheel', M, 34);
+    rule(38);
 
     setText(muted);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text('MC LINE LONGITUDES — WHERE EACH PLANET CULMINATES AT BIRTH MOMENT', M, ay);
-    ay += 8;
+    doc.text('PLANETS PLOTTED AT THEIR ECLIPTIC LONGITUDES.  WHOLE-SIGN HOUSES FROM THE ASCENDANT.', M, 46);
 
-    doc.setFontSize(10);
+    drawChartWheel(doc, chart, W / 2, 138, 76);
+
+    let legY = 230;
+    setText(muted);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.text('LEGEND', M, legY);
+    rule(legY + 3, [220, 215, 200]);
+    legY += 9;
+    setText(text);
+    doc.setFontSize(9);
+    const legendItems = [
+      'Su Sun', 'Mo Moon', 'Me Mercury', 'Ve Venus',
+      'Ma Mars', 'Ju Jupiter', 'Sa Saturn', 'Ur Uranus',
+      'Ne Neptune', 'AC Asc', 'MC Midheaven', 'R retrograde',
+    ];
+    const legCol = (W - 2 * M) / 4;
+    for (let i = 0; i < legendItems.length; i++) {
+      const ci = i % 4, ri = Math.floor(i / 4);
+      doc.text(legendItems[i], M + ci * legCol, legY + ri * 6);
+    }
+
+    let aspKeyY = legY + Math.ceil(legendItems.length / 4) * 6 + 4;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    setText(muted);
+    doc.text('ASPECT COLOURS', M, aspKeyY);
+    aspKeyY += 5;
+    const colorKeys = [
+      { name: 'CONJ',    color: '#c8a060' },
+      { name: 'SEXTILE', color: '#7cc090' },
+      { name: 'SQUARE',  color: '#e07060' },
+      { name: 'TRINE',   color: '#80b8c8' },
+      { name: 'OPP',     color: '#c870a0' },
+    ];
+    let kx = M;
+    for (const k of colorKeys) {
+      const c2 = hexToRgb(k.color);
+      doc.setDrawColor(c2[0], c2[1], c2[2]);
+      doc.setLineWidth(0.7);
+      doc.line(kx, aspKeyY, kx + 8, aspKeyY);
+      setText(text);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.text(k.name, kx + 10, aspKeyY + 1);
+      kx += 28;
+    }
+
+    // ============== PAGE 3 — ASTROCARTOGRAPHY MAP ==============
+    doc.addPage();
+    pageFrame(3, totalPages, 'ASTROCARTOGRAPHY');
+
+    setText(text);
+    doc.setFont('times', 'normal');
+    doc.setFontSize(22);
+    doc.text('Astrocartography', M, 34);
+    rule(38);
+
+    setText(muted);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text('PLANET MERIDIANS PROJECTED ACROSS EARTH.  SOLID = MC + AC.  DASHED = IC + DC.', M, 46);
+
+    const mapX = M, mapY = 52, mapW = W - 2 * M, mapH = (W - 2 * M) / 2;
+    drawWorldMap(doc, chart, mapX, mapY, mapW, mapH);
+
+    let mly = mapY + mapH + 16;
+    setText(text);
+    doc.setFont('times', 'normal');
+    doc.setFontSize(13);
+    doc.text('MC line longitudes', M, mly);
+    rule(mly + 3, [220, 215, 200]);
+    mly += 10;
+    doc.setFontSize(9.5);
     for (const k of ['sun','venus','mars','jupiter','saturn']) {
       const p = chart[k];
       let mcLon = p.ra - chart.gmst;
@@ -663,48 +1039,71 @@
       while (mcLon < -180) mcLon += 360;
       setText(text);
       doc.setFont('times', 'normal');
-      doc.text(cap(k), M, ay);
+      doc.text(cap(k), M, mly);
       setText(accent);
       doc.setFont('courier', 'normal');
       const lonStr = (mcLon >= 0 ? '+' : '') + mcLon.toFixed(1) + '°';
-      doc.text(lonStr.padStart(7), M + 32, ay);
+      doc.text(lonStr.padStart(7), M + 32, mly);
       setText(muted);
       doc.setFont('helvetica', 'normal');
-      doc.text(longitudeRegion(mcLon), M + 56, ay);
-      ay += 6;
+      doc.text(longitudeRegion(mcLon), M + 56, mly);
+      mly += 5.5;
     }
 
-    // ============== PAGE 3 — TRANSITS + NOTES ==============
+    // ============== PAGE 4 — ASPECTS + TRANSITS ==============
     doc.addPage();
-    pageFrame(3, totalPages, "TODAY'S TRANSITS");
+    pageFrame(4, totalPages, 'ASPECTS  ·  TRANSITS');
 
     setText(text);
     doc.setFont('times', 'normal');
     doc.setFontSize(22);
+    doc.text('Natal Aspects', M, 34);
+    rule(38);
+
+    const aspects = natalAspectsFor(chart, 0.9);
+    let aspY = 50;
+    doc.setFontSize(10);
+    for (const a of aspects.slice(0, 12)) {
+      setText(text);
+      doc.setFont('times', 'normal');
+      doc.text(cap(a.a) + '  ' + a.aspect.name.toLowerCase() + '  ' + cap(a.b), M, aspY);
+      setText(muted);
+      doc.setFont('courier', 'normal');
+      const ang = (a.aspect.angle + '°').padStart(4);
+      doc.text(ang + '    orb ' + a.exact.toFixed(1) + '°', W - M, aspY, { align: 'right' });
+      aspY += 6;
+    }
+    if (!aspects.length) {
+      setText(muted);
+      doc.setFont('times', 'italic');
+      doc.text('No tight natal aspects under canonical orbs.', M, aspY);
+    }
+
+    let tHeading = Math.max(aspY + 14, 150);
+    setText(text);
+    doc.setFont('times', 'normal');
+    doc.setFontSize(22);
     const today = new Date().toISOString().slice(0, 10);
-    doc.text(`Transits — ${today}`, M, 36);
-    rule(40);
+    doc.text('Transits — ' + today, M, tHeading);
+    rule(tHeading + 4);
 
     setText(muted);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.text('CURRENT SKY MEASURED AGAINST THE NATIVE’S CHART. TIGHT ORBS ONLY.', M, 48);
+    doc.text("CURRENT SKY MEASURED AGAINST THE NATIVE'S CHART.  TIGHT ORBS ONLY.", M, tHeading + 11);
 
     const sky = computeChart(new Date());
-    const transits = findAspects(sky, chart, 0.8).slice(0, 14);
-    let ty = 60;
+    const transits = findAspects(sky, chart, 0.8).slice(0, 12);
+    let ty = tHeading + 22;
     doc.setFontSize(10);
     for (const a of transits) {
       setText(text);
       doc.setFont('times', 'normal');
-      doc.text(
-        `Transit ${cap(a.transit)}${a.retro ? ' R' : ''}   ${a.aspect.name.toLowerCase()}   natal ${cap(a.natal)}`,
-        M, ty,
-      );
+      doc.text('Transit ' + cap(a.transit) + (a.retro ? ' R' : '') + '   ' + a.aspect.name.toLowerCase() + '   natal ' + cap(a.natal), M, ty);
       setText(muted);
       doc.setFont('courier', 'normal');
-      const ang = `${a.aspect.angle}°`.padStart(4);
-      doc.text(`${ang}    orb ${a.exactness.toFixed(1)}°`, W - M, ty, { align: 'right' });
+      const ang = (a.aspect.angle + '°').padStart(4);
+      doc.text(ang + '    orb ' + a.exactness.toFixed(1) + '°', W - M, ty, { align: 'right' });
       ty += 6;
     }
     if (!transits.length) {
@@ -713,21 +1112,80 @@
       doc.text('No tight aspects active at this hour.', M, ty);
     }
 
-    // Notes / colophon
-    setText(muted);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    let ny = H - 60;
-    doc.text('METHOD', M, ny);
-    ny += 6;
-    doc.setFontSize(8.5);
-    doc.setFont('times', 'italic');
-    doc.text(
-      'Cast in-browser using Paul Schlyter’s simplified planetary formulas. Approx. ±1° accuracy across\n' +
-      '1900–2100. Houses use whole-sign convention. Time-zone derived from longitude (lon/15)\n' +
-      'and may be ±30 min off in India, Nepal, parts of Australia, or Newfoundland.',
-      M, ny, { maxWidth: W - 2 * M },
-    );
+    if (!aiReading || !aiReading.length) {
+      setText(muted);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      let ny = H - 50;
+      doc.text('METHOD', M, ny);
+      ny += 6;
+      doc.setFontSize(8.5);
+      doc.setFont('times', 'italic');
+      doc.text(
+        "Cast in-browser using Paul Schlyter's simplified planetary formulas. Approx. ±1° accuracy across\n" +
+        "1900-2100. Houses use whole-sign convention. Time-zone derived from longitude (lon/15)\n" +
+        "and may be ±30 min off in India, Nepal, parts of Australia, or Newfoundland.",
+        M, ny, { maxWidth: W - 2 * M },
+      );
+    }
+
+    // ============== PAGE 5 (optional) — AI NATAL READING ==============
+    if (aiReading && aiReading.length) {
+      doc.addPage();
+      pageFrame(5, totalPages, 'NATAL READING');
+
+      setText(text);
+      doc.setFont('times', 'normal');
+      doc.setFontSize(22);
+      doc.text('Natal Reading', M, 34);
+      rule(38);
+
+      setText(accent);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.text('GENERATED BY CLAUDE-SONNET-4 FROM THIS CHART', M, 46);
+
+      setText(text);
+      doc.setFont('times', 'normal');
+      doc.setFontSize(11);
+      let ry = 60;
+      const lineHeight = 5.2;
+      const maxWidth = W - 2 * M;
+      let pageNum = 5;
+
+      for (const para of aiReading) {
+        const lines = doc.splitTextToSize(para, maxWidth);
+        for (const line of lines) {
+          if (ry > H - 24) {
+            doc.addPage();
+            pageNum++;
+            pageFrame(pageNum, totalPages, 'NATAL READING (CONT.)');
+            setText(text);
+            doc.setFont('times', 'normal');
+            doc.setFontSize(11);
+            ry = 36;
+          }
+          doc.text(line, M, ry);
+          ry += lineHeight;
+        }
+        ry += 4;
+      }
+
+      if (ry < H - 50) {
+        setText(muted);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        let ny = H - 40;
+        doc.text('METHOD', M, ny);
+        ny += 6;
+        doc.setFontSize(8.5);
+        doc.setFont('times', 'italic');
+        doc.text(
+          "Cast in-browser using Paul Schlyter's simplified planetary formulas. Reading composed by claude-sonnet-4 from the chart data above.",
+          M, ny, { maxWidth: W - 2 * M },
+        );
+      }
+    }
 
     // save
     const slug = ((chart.profile.name || 'native')
