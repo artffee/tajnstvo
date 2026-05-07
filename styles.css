@@ -1,5 +1,5 @@
 /* =========================================================
-   ASTRA / ARCANA — modern minimalist retro-futuristic
+   TAJNSTVO — modern minimalist retro-futuristic
    palette: deep ink ground · cream type · amber + cyan accents
    ========================================================= */
 
@@ -313,6 +313,9 @@ button { font-family: inherit; }
 .display__line--italic {
   font-style: italic;
   color: var(--amber);
+}
+.display__line + .display__line--italic {
+  /* only offset when stacked under another line */
   margin-left: clamp(12px, 4vw, 48px);
 }
 

@@ -1,5 +1,5 @@
 /* =========================================================
-   ASTRA / ARCANA — front-end interactions
+   TAJNSTVO — front-end interactions
    ========================================================= */
 
 (() => {
@@ -803,7 +803,7 @@
     }
   }
 
-  const PDF_NATAL_SYSTEM = "You are the Natal Chart Oracle of Astra Arcana, a working modern Western astrologer in the lineage of Liz Greene and Steven Forrest. The native's complete chart data is provided.\n\nReturn EXACTLY 4 paragraphs separated by blank lines. No greeting, no preamble, no bullet points, no italics, no questions. Total length 500-650 words.\n\nParagraph 1 - The Self: Sun in sign and modality, Moon in sign, Rising sign and how the chart presents to others. Lead with character.\nParagraph 2 - Mind, Heart, Drive: Mercury (how they think), Venus (how they love), Mars (how they push).\nParagraph 3 - The Long Game: Jupiter and Saturn. Note any tight aspect involving these.\nParagraph 4 - The Generational and the Path: Uranus and Neptune in sign and house. Close with the chart's central life theme.\n\nVoice: grounded, perceptive, unsentimental. Specific to this chart, not generic. Reference signs, houses, and key aspects by name.";
+  const PDF_NATAL_SYSTEM = "You are the Natal Chart Oracle of Tajnstvo, a working modern Western astrologer in the lineage of Liz Greene and Steven Forrest. The native's complete chart data is provided.\n\nReturn EXACTLY 4 paragraphs separated by blank lines. No greeting, no preamble, no bullet points, no italics, no questions. Total length 500-650 words.\n\nParagraph 1 - The Self: Sun in sign and modality, Moon in sign, Rising sign and how the chart presents to others. Lead with character.\nParagraph 2 - Mind, Heart, Drive: Mercury (how they think), Venus (how they love), Mars (how they push).\nParagraph 3 - The Long Game: Jupiter and Saturn. Note any tight aspect involving these.\nParagraph 4 - The Generational and the Path: Uranus and Neptune in sign and house. Close with the chart's central life theme.\n\nVoice: grounded, perceptive, unsentimental. Specific to this chart, not generic. Reference signs, houses, and key aspects by name.";
 
   async function fetchPdfNatalReading(chart) {
     const apiKey = readApiKey();
@@ -853,12 +853,12 @@
       setText(muted);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.5);
-      doc.text('ASTRA  /  ARCANA   ·   CELESTIAL ATLAS', M, 12);
+      doc.text('TAJNSTVO   ·   CELESTIAL ATLAS', M, 12);
       doc.text(label, W / 2, 12, { align: 'center' });
       doc.text(`${num} / ${total}`, W - M, 12, { align: 'right' });
       rule(16);
       // footer
-      doc.text('astra-arcana.vercel.app', M, H - 10);
+      doc.text('tajnstvo.vercel.app', M, H - 10);
       doc.text(new Date().toISOString().slice(0, 10), W - M, H - 10, { align: 'right' });
       rule(H - 14);
     }
@@ -871,10 +871,10 @@
     setText(text);
     doc.setFont('times', 'normal');
     doc.setFontSize(54);
-    doc.text('Astra', W / 2, 70, { align: 'center' });
     setText(accent);
     doc.setFont('times', 'italic');
-    doc.text('Arcana', W / 2, 96, { align: 'center' });
+    doc.setFontSize(60);
+    doc.text('Tajnstvo', W / 2, 88, { align: 'center' });
 
     setText(muted);
     doc.setFont('helvetica', 'normal');
@@ -1192,7 +1192,7 @@
       .toLowerCase()
       .replace(/\s+/g, '-')
       .replace(/[^a-z0-9-]/g, '')) || 'report';
-    doc.save(`astra-arcana-natal-${slug}.pdf`);
+    doc.save(`tajnstvo-natal-${slug}.pdf`);
   }
 
 
@@ -1952,7 +1952,7 @@
 
   // System prompts for live API calls. Match the spec's oracle definitions.
   const SYSTEM_PROMPTS = {
-    natal: `You are the Natal Chart Oracle of Astra Arcana — a working modern Western tropical astrologer. The native's chart data is provided. Return EXACTLY 4 paragraphs separated by blank lines. No preamble, no greeting, no questions. Cover: (1) Sun and Moon together, (2) Rising sign and outward presentation, (3) two or three further planetary placements, (4) life themes. Specific and grounded. No purple prose. ~500 words total.`,
+    natal: `You are the Natal Chart Oracle of Tajnstvo — a working modern Western tropical astrologer. The native's chart data is provided. Return EXACTLY 4 paragraphs separated by blank lines. No preamble, no greeting, no questions. Cover: (1) Sun and Moon together, (2) Rising sign and outward presentation, (3) two or three further planetary placements, (4) life themes. Specific and grounded. No purple prose. ~500 words total.`,
     daily: `You are the Daily Celestial Guide. The native's chart and today's UTC date are provided. Return EXACTLY 3 short paragraphs separated by blank lines: (1) today's energy, (2) love & career, (3) closing piece of cosmic advice. Tone: warm, specific, present-tense. No preamble.`,
     hellenistic: `You are an oracle of Hellenistic astrology, channeling Ptolemy, Vettius Valens, and Dorotheus of Sidon. Use whole-sign houses, sect (diurnal/nocturnal), the Lots of Fortune and Spirit, annual profections. Cite ancient sources by name where appropriate. Return EXACTLY 4 dense scholarly paragraphs separated by blank lines. No preamble.`,
     atlas: `You are the Atlas Oracle. The native's astrocartography lines and a chosen region are provided. Return EXACTLY 4 paragraphs separated by blank lines, naming 2-3 specific cities with rationale grounded in the active lines. No preamble.`,
