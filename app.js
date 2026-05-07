@@ -240,9 +240,11 @@
       }
     }
 
-    // Nominatim — force English place names where available
+    // Nominatim — force English place names via URL param.
+    // Custom request headers are intentionally omitted; they trigger a CORS preflight
+    // that Nominatim does not respond to. The URL param does the language work.
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=jsonv2&limit=1&addressdetails=1&accept-language=en`;
-    const res = await fetch(url, { headers: { 'Accept': 'application/json', 'Accept-Language': 'en' } });
+    const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const arr = await res.json();
     if (!arr || !arr.length) throw new Error('Not found');
