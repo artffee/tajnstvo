@@ -131,21 +131,26 @@
         <input type="time" name="birthTime" value="07:42" />
       </label>
       <label class="field">
-        <span class="field__label mono mono--small">CITY</span>
-        <select name="cityIdx" id="cityIdx">
-          <option value="0">London · UK</option>
-          <option value="1">New York · USA</option>
-          <option value="2">Los Angeles · USA</option>
-          <option value="3">Paris · France</option>
-          <option value="4">Berlin · Germany</option>
-          <option value="5">Lisbon · Portugal</option>
-          <option value="6">Tokyo · Japan</option>
-          <option value="7">Sydney · Australia</option>
-          <option value="8">Mumbai · India</option>
-          <option value="9">São Paulo · Brazil</option>
-          <option value="10">Cape Town · South Africa</option>
-          <option value="11">Mexico City · Mexico</option>
-        </select>
+        <span class="field__label mono mono--small">CITY OF BIRTH</span>
+        <input type="text" name="cityName" id="cityName" list="cityHints" placeholder="Sofia, Bulgaria" autocomplete="off" spellcheck="false" required />
+        <datalist id="cityHints">
+          <option value="London, United Kingdom"></option>
+          <option value="New York, United States"></option>
+          <option value="Los Angeles, United States"></option>
+          <option value="Paris, France"></option>
+          <option value="Berlin, Germany"></option>
+          <option value="Lisbon, Portugal"></option>
+          <option value="Tokyo, Japan"></option>
+          <option value="Sydney, Australia"></option>
+          <option value="Mumbai, India"></option>
+          <option value="São Paulo, Brazil"></option>
+          <option value="Cape Town, South Africa"></option>
+          <option value="Mexico City, Mexico"></option>
+          <option value="Sofia, Bulgaria"></option>
+          <option value="Athens, Greece"></option>
+          <option value="Istanbul, Türkiye"></option>
+          <option value="Reykjavík, Iceland"></option>
+        </datalist>
       </label>
       <button type="submit" class="btn btn--solid btn--field">Save profile</button>
     </form>

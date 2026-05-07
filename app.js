@@ -200,13 +200,62 @@
     return out;
   }
 
+  function profileLocation(profile) {
+    if (profile && profile.lat != null && profile.lon != null) {
+      return {
+        name: profile.cityName || 'Unknown',
+        lat:  profile.lat,
+        lon:  profile.lon,
+        tz:   profile.tz != null ? profile.tz : Math.round(profile.lon / 15),
+      };
+    }
+    // legacy: cityIdx
+    if (profile && profile.cityIdx != null) {
+      const c = CITIES[profile.cityIdx] || CITIES[0];
+      return { name: c.name, lat: c.lat, lon: c.lon, tz: c.tz };
+    }
+    return CITIES[0];
+  }
+
   function profileToUTC(profile) {
     if (!profile || !profile.birthDate || !profile.birthTime) return null;
-    const c = CITIES[profile.cityIdx || 0] || CITIES[0];
+    const loc = profileLocation(profile);
     const [yy, mm, dd] = profile.birthDate.split('-').map(Number);
     const [hh, mn] = profile.birthTime.split(':').map(Number);
-    const ms = Date.UTC(yy, mm - 1, dd, hh, mn) - c.tz * 3600 * 1000;
+    const ms = Date.UTC(yy, mm - 1, dd, hh, mn) - loc.tz * 3600 * 1000;
     return new Date(ms);
+  }
+
+  // Geocode a free-text city via Nominatim (OpenStreetMap).
+  // Falls back to the bundled CITIES table for an exact name match (instant, offline).
+  async function geocodeCity(query) {
+    const q = (query || '').trim();
+    if (!q) throw new Error('Empty');
+
+    // bundled match first
+    const lc = q.toLowerCase();
+    for (const c of CITIES) {
+      if (c.name.toLowerCase() === lc || lc.startsWith(c.name.toLowerCase() + ',')) {
+        return { name: c.name, lat: c.lat, lon: c.lon, tz: c.tz };
+      }
+    }
+
+    // Nominatim — force English place names where available
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=jsonv2&limit=1&addressdetails=1&accept-language=en`;
+    const res = await fetch(url, { headers: { 'Accept': 'application/json', 'Accept-Language': 'en' } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const arr = await res.json();
+    if (!arr || !arr.length) throw new Error('Not found');
+    const r = arr[0];
+    const lat = parseFloat(r.lat);
+    const lon = parseFloat(r.lon);
+    if (!isFinite(lat) || !isFinite(lon)) throw new Error('Bad coords');
+    // approximate timezone: lon/15 rounded. India / Nepal / Newfoundland will be ~30min off.
+    const tz = Math.round(lon / 15);
+    // shorten display name to City, Country
+    const parts = (r.display_name || q).split(',').map(s => s.trim()).filter(Boolean);
+    const short = parts.length >= 2 ? `${parts[0]}, ${parts[parts.length - 1]}` : parts[0];
+    return { name: short, lat, lon, tz };
   }
 
   function lonToSign(lon) {
@@ -261,12 +310,12 @@
     if (!p) return null;
     const utc = profileToUTC(p);
     if (!utc || isNaN(utc.getTime())) return null;
-    const c = CITIES[p.cityIdx || 0] || CITIES[0];
+    const loc = profileLocation(p);
     const chart = computeChart(utc);
     chart.profile = p;
-    chart.city = c;
-    chart.ascendant = computeAscendant(utc, c.lat, c.lon);
-    chart.mc        = computeMC(utc, c.lon);
+    chart.city = loc;
+    chart.ascendant = computeAscendant(utc, loc.lat, loc.lon);
+    chart.mc        = computeMC(utc, loc.lon);
     return chart;
   }
 
@@ -358,7 +407,12 @@
       if (p.name)      profileForm.elements.name.value = p.name;
       if (p.birthDate) profileForm.elements.birthDate.value = p.birthDate;
       if (p.birthTime) profileForm.elements.birthTime.value = p.birthTime;
-      if (p.cityIdx != null) profileForm.elements.cityIdx.value = String(p.cityIdx);
+      if (p.cityName) {
+        profileForm.elements.cityName.value = p.cityName;
+      } else if (p.cityIdx != null) {
+        const c = CITIES[p.cityIdx] || CITIES[0];
+        profileForm.elements.cityName.value = c.name;
+      }
       flashNote(`LOADED · ${p.name || 'PROFILE'} · ${p.birthDate || ''}`);
     } catch (_) { /* ignore */ }
   }
@@ -370,17 +424,52 @@
   }
 
   if (profileForm) {
-    profileForm.addEventListener('submit', (e) => {
+    profileForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const submitBtn = profileForm.querySelector('button[type="submit"]');
       const data = Object.fromEntries(new FormData(profileForm).entries());
-      data.cityIdx = Number(data.cityIdx);
+      const cityName = (data.cityName || '').trim();
+      if (!cityName) { flashNote('CITY OF BIRTH REQUIRED', 'warn'); return; }
+      if (!data.birthDate || !data.birthTime) { flashNote('DATE AND TIME REQUIRED', 'warn'); return; }
+
+      const oldText = submitBtn ? submitBtn.textContent : null;
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Geocoding…'; }
+      flashNote('GEOCODING CITY …');
+
+      let loc;
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        flashNote(`SAVED · CASTING CHART …`);
-      } catch (_) {
-        flashNote('STORAGE UNAVAILABLE — RUNNING IN-MEMORY', 'warn');
+        loc = await geocodeCity(cityName);
+      } catch (err) {
+        flashNote(`COULD NOT FIND CITY · ${(err.message || '').toUpperCase()}`, 'warn');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = oldText; }
+        return;
       }
+
+      const profile = {
+        name:      data.name,
+        birthDate: data.birthDate,
+        birthTime: data.birthTime,
+        cityName:  loc.name,
+        lat:       loc.lat,
+        lon:       loc.lon,
+        tz:        loc.tz,
+      };
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+      } catch (_) {
+        flashNote('STORAGE UNAVAILABLE — IN-MEMORY ONLY', 'warn');
+      }
+
+      // sync the input to the canonical name returned by geocoding
+      profileForm.elements.cityName.value = loc.name;
+
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = oldText; }
       refreshAll();
+
+      // surface the oracle cards once the chart is cast
+      const oracles = document.getElementById('oracles');
+      if (oracles) setTimeout(() => oracles.scrollIntoView({ behavior: 'smooth', block: 'start' }), 280);
     });
     loadProfile();
   }
@@ -610,7 +699,10 @@
     const sun = lonToSign(chart.sun.lon).str;
     const moon = lonToSign(chart.moon.lon).str;
     const asc = lonToSign(chart.ascendant).str;
-    note.innerHTML = `<span style="color:var(--cyan)">CHART CAST</span> · ☉ ${sun} · ☾ ${moon} · ASC ${asc} · ${chart.city.name.toUpperCase()}`;
+    const tz = chart.city.tz != null ? chart.city.tz : Math.round(chart.city.lon / 15);
+    const tzLabel = `UTC${tz >= 0 ? '+' : ''}${tz}`;
+    const cityShort = (chart.city.name || '').split(',')[0].toUpperCase();
+    note.innerHTML = `<span style="color:var(--cyan)">CHART CAST</span> · ☉ ${sun} · ☾ ${moon} · ASC ${asc} · ${cityShort} · ${tzLabel}`;
   }
 
 
