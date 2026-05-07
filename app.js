@@ -240,23 +240,21 @@
       }
     }
 
-    // Nominatim — force English place names via URL param.
-    // Custom request headers are intentionally omitted; they trigger a CORS preflight
-    // that Nominatim does not respond to. The URL param does the language work.
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=jsonv2&limit=1&addressdetails=1&accept-language=en`;
+    // Photon (Komoot) — OSM-based geocoder with public CORS, designed for browser use.
+    const url = `https://photon.komoot.io/api?q=${encodeURIComponent(q)}&limit=1&lang=en`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const arr = await res.json();
-    if (!arr || !arr.length) throw new Error('Not found');
-    const r = arr[0];
-    const lat = parseFloat(r.lat);
-    const lon = parseFloat(r.lon);
+    const data = await res.json();
+    const f = (data.features || [])[0];
+    if (!f || !f.geometry || !f.geometry.coordinates) throw new Error('Not found');
+    const [lon, lat] = f.geometry.coordinates;
     if (!isFinite(lat) || !isFinite(lon)) throw new Error('Bad coords');
+    const props = f.properties || {};
+    const cityPart = props.city || props.name || props.town || props.village || q.split(',')[0].trim();
+    const countryPart = props.country || '';
+    const short = countryPart ? `${cityPart}, ${countryPart}` : cityPart;
     // approximate timezone: lon/15 rounded. India / Nepal / Newfoundland will be ~30min off.
     const tz = Math.round(lon / 15);
-    // shorten display name to City, Country
-    const parts = (r.display_name || q).split(',').map(s => s.trim()).filter(Boolean);
-    const short = parts.length >= 2 ? `${parts[0]}, ${parts[parts.length - 1]}` : parts[0];
     return { name: short, lat, lon, tz };
   }
 
