@@ -293,10 +293,14 @@
   const STORAGE_KEY = 'astra-arcana:profile';
   const APIKEY_KEY  = 'astra-arcana:apiKey';
 
-  function readProfile() {
-    try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : null; }
-    catch { return null; }
-  }
+  // Profile lives in memory only — no persistence. Each session starts fresh.
+  // Any leftover legacy storage from earlier versions is cleared on load.
+  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  let currentProfile = null;
+
+  function readProfile() { return currentProfile; }
+  function writeProfile(p) { currentProfile = p; }
+
   function readApiKey() {
     try { return localStorage.getItem(APIKEY_KEY) || ''; }
     catch { return ''; }
@@ -398,24 +402,7 @@
   const profileForm = document.getElementById('profileForm');
   const profileNote = document.getElementById('profileNote');
 
-  function loadProfile() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const p = JSON.parse(raw);
-      if (!profileForm) return;
-      if (p.name)      profileForm.elements.name.value = p.name;
-      if (p.birthDate) profileForm.elements.birthDate.value = p.birthDate;
-      if (p.birthTime) profileForm.elements.birthTime.value = p.birthTime;
-      if (p.cityName) {
-        profileForm.elements.cityName.value = p.cityName;
-      } else if (p.cityIdx != null) {
-        const c = CITIES[p.cityIdx] || CITIES[0];
-        profileForm.elements.cityName.value = c.name;
-      }
-      flashNote(`LOADED · ${p.name || 'PROFILE'} · ${p.birthDate || ''}`);
-    } catch (_) { /* ignore */ }
-  }
+  function loadProfile() { /* no-op: nothing is persisted any more */ }
 
   function flashNote(msg, tone) {
     if (!profileNote) return;
@@ -431,6 +418,10 @@
       const cityName = (data.cityName || '').trim();
       if (!cityName) { flashNote('CITY OF BIRTH REQUIRED', 'warn'); return; }
       if (!data.birthDate || !data.birthTime) { flashNote('DATE AND TIME REQUIRED', 'warn'); return; }
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        flashNote('PDF LIBRARY NOT LOADED · CHECK NETWORK', 'warn');
+        return;
+      }
 
       const oldText = submitBtn ? submitBtn.textContent : null;
       if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Geocoding…'; }
@@ -445,7 +436,7 @@
         return;
       }
 
-      const profile = {
+      writeProfile({
         name:      data.name,
         birthDate: data.birthDate,
         birthTime: data.birthTime,
@@ -453,25 +444,297 @@
         lat:       loc.lat,
         lon:       loc.lon,
         tz:        loc.tz,
-      };
-
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
-      } catch (_) {
-        flashNote('STORAGE UNAVAILABLE — IN-MEMORY ONLY', 'warn');
-      }
-
-      // sync the input to the canonical name returned by geocoding
+      });
       profileForm.elements.cityName.value = loc.name;
 
-      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = oldText; }
+      // refresh inline UI in this session (cartography, transits, ticker)
       refreshAll();
 
-      // surface the oracle cards once the chart is cast
-      const oracles = document.getElementById('oracles');
-      if (oracles) setTimeout(() => oracles.scrollIntoView({ behavior: 'smooth', block: 'start' }), 280);
+      // build and download the PDF
+      if (submitBtn) submitBtn.textContent = 'Building PDF…';
+      flashNote('BUILDING PDF REPORT …');
+      try {
+        const chart = getNatalChart();
+        if (!chart) throw new Error('Could not compute chart');
+        await generatePdfReport(chart);
+        flashNote(`PDF DOWNLOADED · ${(chart.profile.name || 'NATIVE').toUpperCase()}`);
+      } catch (err) {
+        flashNote(`PDF BUILD FAILED · ${(err.message || '').toUpperCase()}`, 'warn');
+      } finally {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = oldText; }
+      }
     });
     loadProfile();
+  }
+
+
+  /* ---------- PDF report builder ---------- */
+
+  function longitudeRegion(lon) {
+    if (lon >= -180 && lon < -130) return '— mid-Pacific';
+    if (lon >= -130 && lon < -90)  return '— North America (Pacific / Mountain)';
+    if (lon >=  -90 && lon < -60)  return '— North America (Central / Eastern)';
+    if (lon >=  -60 && lon < -30)  return '— Atlantic / South America';
+    if (lon >=  -30 && lon <   0)  return '— West Africa / Iberia';
+    if (lon >=    0 && lon <  30)  return '— Europe / West Africa';
+    if (lon >=   30 && lon <  60)  return '— East Europe / Middle East';
+    if (lon >=   60 && lon < 100)  return '— Central / South Asia';
+    if (lon >=  100 && lon < 130)  return '— East Asia';
+    if (lon >=  130 && lon < 160)  return '— Australia / NZ';
+    return '— mid-Pacific';
+  }
+
+  function natalAspectsFor(chart, orbScale = 0.9) {
+    const out = [];
+    const keys = ['sun','moon','mercury','venus','mars','jupiter','saturn','uranus','neptune'];
+    for (let i = 0; i < keys.length; i++) {
+      for (let j = i + 1; j < keys.length; j++) {
+        let diff = Math.abs(chart[keys[i]].lon - chart[keys[j]].lon);
+        if (diff > 180) diff = 360 - diff;
+        for (const def of ASPECTS_DEFS) {
+          const off = Math.abs(diff - def.angle);
+          if (off <= def.orb * orbScale) {
+            out.push({ a: keys[i], b: keys[j], aspect: def, exact: off });
+          }
+        }
+      }
+    }
+    out.sort((a, b) => a.exact - b.exact);
+    return out;
+  }
+
+  async function generatePdfReport(chart) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const W = 210, H = 297, M = 22;
+    const text  = [22, 24, 32];
+    const accent = [200, 140, 50];
+    const muted = [125, 120, 105];
+    const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+    const setText = c => doc.setTextColor(c[0], c[1], c[2]);
+    const setDraw = c => doc.setDrawColor(c[0], c[1], c[2]);
+    const rule = (y, c = muted) => { setDraw(c); doc.setLineWidth(0.2); doc.line(M, y, W - M, y); };
+
+    function pageFrame(num, total, label) {
+      setText(muted);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.text('ASTRA  /  ARCANA   ·   CELESTIAL ATLAS', M, 12);
+      doc.text(label, W / 2, 12, { align: 'center' });
+      doc.text(`${num} / ${total}`, W - M, 12, { align: 'right' });
+      rule(16);
+      // footer
+      doc.text('astra-arcana.vercel.app', M, H - 10);
+      doc.text(new Date().toISOString().slice(0, 10), W - M, H - 10, { align: 'right' });
+      rule(H - 14);
+    }
+
+    const totalPages = 3;
+
+    // ============== PAGE 1 — COVER + PLACEMENTS ==============
+    pageFrame(1, totalPages, 'NATAL REPORT');
+
+    setText(text);
+    doc.setFont('times', 'normal');
+    doc.setFontSize(54);
+    doc.text('Astra', W / 2, 70, { align: 'center' });
+    setText(accent);
+    doc.setFont('times', 'italic');
+    doc.text('Arcana', W / 2, 96, { align: 'center' });
+
+    setText(muted);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text('NATAL  ·  TROPICAL  ·  WHOLE-SIGN', W / 2, 108, { align: 'center' });
+
+    // native block
+    let y = 132;
+    setText(muted);
+    doc.setFontSize(7.5);
+    doc.text('NATIVE', M, y);
+    setText(text);
+    doc.setFont('times', 'normal');
+    doc.setFontSize(22);
+    doc.text(chart.profile.name || 'Anonymous', M, y + 10);
+
+    y += 26;
+    setText(muted);
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'normal');
+    doc.text('BIRTH', M, y);
+    setText(text);
+    doc.setFont('times', 'normal');
+    doc.setFontSize(13);
+    doc.text(`${chart.profile.birthDate}   ·   ${chart.profile.birthTime}`, M, y + 8);
+    doc.text(chart.city.name, M, y + 18);
+    setText(muted);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    const tzLabel = `UTC${chart.city.tz >= 0 ? '+' : ''}${chart.city.tz}`;
+    doc.text(`${chart.city.lat.toFixed(2)}°,  ${chart.city.lon.toFixed(2)}°   ·   ${tzLabel}`, M, y + 25);
+
+    // placements table — right column
+    const colX = W / 2 + 4;
+    let py = 132;
+    setText(muted);
+    doc.setFontSize(7.5);
+    doc.text('PLACEMENTS', colX, py);
+    py += 8;
+
+    const placements = [
+      ['Sun',       chart.sun],
+      ['Moon',      chart.moon],
+      ['Mercury',   chart.mercury],
+      ['Venus',     chart.venus],
+      ['Mars',      chart.mars],
+      ['Jupiter',   chart.jupiter],
+      ['Saturn',    chart.saturn],
+      ['Uranus',    chart.uranus],
+      ['Neptune',   chart.neptune],
+      [null, null],
+      ['Ascendant', { lon: chart.ascendant }],
+      ['Midheaven', { lon: chart.mc }],
+    ];
+    doc.setFontSize(10);
+    for (const [name, body] of placements) {
+      if (name === null) { py += 3; continue; }
+      const sgn = lonToSign(body.lon);
+      setText(text);
+      doc.setFont('times', 'normal');
+      doc.text(name, colX, py);
+      setText(accent);
+      doc.setFont('courier', 'normal');
+      const deg = sgn.deg.toFixed(1).padStart(4);
+      doc.text(`${sgn.sign}  ${deg}°${body.retro ? '  R' : ''}`, colX + 30, py);
+      py += 6;
+    }
+
+    // ============== PAGE 2 — ASPECTS + ASTROCARTOGRAPHY ==============
+    doc.addPage();
+    pageFrame(2, totalPages, 'ASPECTS  ·  ASTROCARTOGRAPHY');
+
+    setText(text);
+    doc.setFont('times', 'normal');
+    doc.setFontSize(22);
+    doc.text('Natal Aspects', M, 36);
+    rule(40);
+
+    const aspects = natalAspectsFor(chart, 0.9);
+    let ay = 50;
+    doc.setFontSize(10);
+    for (const a of aspects.slice(0, 16)) {
+      setText(text);
+      doc.setFont('times', 'normal');
+      doc.text(`${cap(a.a)}  ${a.aspect.name.toLowerCase()}  ${cap(a.b)}`, M, ay);
+      setText(muted);
+      doc.setFont('courier', 'normal');
+      const ang = `${a.aspect.angle}°`.padStart(4);
+      doc.text(`${ang}    orb ${a.exact.toFixed(1)}°`, W - M, ay, { align: 'right' });
+      ay += 6;
+    }
+    if (!aspects.length) {
+      setText(muted);
+      doc.setFont('times', 'italic');
+      doc.text('No tight natal aspects under canonical orbs.', M, ay);
+    }
+
+    // Astrocartography
+    ay = Math.max(ay + 14, 160);
+    setText(text);
+    doc.setFont('times', 'normal');
+    doc.setFontSize(22);
+    doc.text('Astrocartography', M, ay);
+    ay += 5;
+    rule(ay);
+    ay += 10;
+
+    setText(muted);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text('MC LINE LONGITUDES — WHERE EACH PLANET CULMINATES AT BIRTH MOMENT', M, ay);
+    ay += 8;
+
+    doc.setFontSize(10);
+    for (const k of ['sun','venus','mars','jupiter','saturn']) {
+      const p = chart[k];
+      let mcLon = p.ra - chart.gmst;
+      while (mcLon >  180) mcLon -= 360;
+      while (mcLon < -180) mcLon += 360;
+      setText(text);
+      doc.setFont('times', 'normal');
+      doc.text(cap(k), M, ay);
+      setText(accent);
+      doc.setFont('courier', 'normal');
+      const lonStr = (mcLon >= 0 ? '+' : '') + mcLon.toFixed(1) + '°';
+      doc.text(lonStr.padStart(7), M + 32, ay);
+      setText(muted);
+      doc.setFont('helvetica', 'normal');
+      doc.text(longitudeRegion(mcLon), M + 56, ay);
+      ay += 6;
+    }
+
+    // ============== PAGE 3 — TRANSITS + NOTES ==============
+    doc.addPage();
+    pageFrame(3, totalPages, "TODAY'S TRANSITS");
+
+    setText(text);
+    doc.setFont('times', 'normal');
+    doc.setFontSize(22);
+    const today = new Date().toISOString().slice(0, 10);
+    doc.text(`Transits — ${today}`, M, 36);
+    rule(40);
+
+    setText(muted);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text('CURRENT SKY MEASURED AGAINST THE NATIVE’S CHART. TIGHT ORBS ONLY.', M, 48);
+
+    const sky = computeChart(new Date());
+    const transits = findAspects(sky, chart, 0.8).slice(0, 14);
+    let ty = 60;
+    doc.setFontSize(10);
+    for (const a of transits) {
+      setText(text);
+      doc.setFont('times', 'normal');
+      doc.text(
+        `Transit ${cap(a.transit)}${a.retro ? ' R' : ''}   ${a.aspect.name.toLowerCase()}   natal ${cap(a.natal)}`,
+        M, ty,
+      );
+      setText(muted);
+      doc.setFont('courier', 'normal');
+      const ang = `${a.aspect.angle}°`.padStart(4);
+      doc.text(`${ang}    orb ${a.exactness.toFixed(1)}°`, W - M, ty, { align: 'right' });
+      ty += 6;
+    }
+    if (!transits.length) {
+      setText(muted);
+      doc.setFont('times', 'italic');
+      doc.text('No tight aspects active at this hour.', M, ty);
+    }
+
+    // Notes / colophon
+    setText(muted);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    let ny = H - 60;
+    doc.text('METHOD', M, ny);
+    ny += 6;
+    doc.setFontSize(8.5);
+    doc.setFont('times', 'italic');
+    doc.text(
+      'Cast in-browser using Paul Schlyter’s simplified planetary formulas. Approx. ±1° accuracy across\n' +
+      '1900–2100. Houses use whole-sign convention. Time-zone derived from longitude (lon/15)\n' +
+      'and may be ±30 min off in India, Nepal, parts of Australia, or Newfoundland.',
+      M, ny, { maxWidth: W - 2 * M },
+    );
+
+    // save
+    const slug = ((chart.profile.name || 'native')
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')) || 'report';
+    doc.save(`astra-arcana-natal-${slug}.pdf`);
   }
 
 
