@@ -265,6 +265,42 @@
     return { sign: SIGNS[idx], deg, str: `${SIGNS[idx]} ${Math.floor(deg).toString().padStart(2,'0')}°` };
   }
 
+  // Pythagorean life path number from a YYYY-MM-DD date.
+  // Single-digit reduction except master numbers 11, 22, 33.
+  function lifePathNumber(birthDate) {
+    if (!birthDate) return null;
+    const digits = birthDate.replace(/-/g, '').split('').map(d => parseInt(d, 10));
+    let sum = digits.reduce((a, b) => a + b, 0);
+    while (sum > 9 && sum !== 11 && sum !== 22 && sum !== 33) {
+      sum = String(sum).split('').map(Number).reduce((a, b) => a + b, 0);
+    }
+    return sum;
+  }
+
+  // Mean lunar ascending node (north node), Schlyter formula.
+  function meanLunarNorthNode(d) {
+    return norm360(125.1228 - 0.0529538083 * d);
+  }
+
+  // Whole-sign house of a planet given the ascendant longitude.
+  // 1st house = sign of Asc, 2nd = next sign, etc.
+  function houseOfPlanet(planetLon, ascLon) {
+    const ascSign    = Math.floor(norm360(ascLon)    / 30);
+    const planetSign = Math.floor(norm360(planetLon) / 30);
+    let h = planetSign - ascSign + 1;
+    if (h <= 0) h += 12;
+    return h;
+  }
+
+  function planetsInHouse(chart, houseNum) {
+    const out = [];
+    for (const k of ['sun','moon','mercury','venus','mars','jupiter','saturn','uranus','neptune']) {
+      const p = chart[k];
+      if (p && houseOfPlanet(p.lon, chart.ascendant) === houseNum) out.push(k);
+    }
+    return out;
+  }
+
   function findAspects(transit, natal, orbScale = 1) {
     const out = [];
     for (const tk of PLANET_KEYS) {
@@ -320,6 +356,8 @@
     chart.city = loc;
     chart.ascendant = computeAscendant(utc, loc.lat, loc.lon);
     chart.mc        = computeMC(utc, loc.lon);
+    chart.lifePath  = lifePathNumber(p.birthDate);
+    chart.northNode = meanLunarNorthNode(chart.d);
     return chart;
   }
 
@@ -864,7 +902,7 @@
     }
   }
 
-  const PDF_NATAL_SYSTEM = "You are the Natal Chart Oracle of Tajnstvo, a working modern Western astrologer in the lineage of Liz Greene and Steven Forrest. The native's complete chart data is provided.\n\nReturn EXACTLY 4 paragraphs separated by blank lines. No greeting, no preamble, no bullet points, no italics, no questions. Total length 500-650 words.\n\nParagraph 1 - The Self: Sun in sign and modality, Moon in sign, Rising sign and how the chart presents to others. Lead with character.\nParagraph 2 - Mind, Heart, Drive: Mercury (how they think), Venus (how they love), Mars (how they push).\nParagraph 3 - The Long Game: Jupiter and Saturn. Note any tight aspect involving these.\nParagraph 4 - The Generational and the Path: Uranus and Neptune in sign and house. Close with the chart's central life theme.\n\nVoice: grounded, perceptive, unsentimental. Specific to this chart, not generic. Reference signs, houses, and key aspects by name.";
+  const PDF_NATAL_SYSTEM = "You are the Soul Oracle of Tajnstvo. Use a three-phase framework (Activation, Transmutation, Integration) to write a personalised soul reading from the native's chart data. Voice: warm, perceptive, unsentimental, evolutionary. Specific to this chart; never generic. No greeting, no preamble, no bullet points, no italics, no questions. Total length 550-700 words.\n\nReturn EXACTLY 4 sections separated by blank lines. Each section begins with the label on its own line, in capitals, followed by a blank line and then the paragraph.\n\nACTIVATION\n\nWhat is surfacing in this person's life now and asking to be lived. Anchor in Sun, Moon, Rising, and any tight personal-planet aspect.\n\nTRANSMUTATION\n\nWhat is asking to be released, refined, or grieved. Anchor in Saturn placement, hard aspects, and 12th-house material if present.\n\nINTEGRATION\n\nWhat life looks like when this energy is embodied and steady. Anchor in Jupiter, the North Node direction, and the composite of the Big Three.\n\nBOTTOM LINE\n\nA single resonant sentence that names the core of this chart. One sentence only.";
 
   async function fetchPdfNatalReading(chart) {
     const apiKey = readApiKey();
@@ -924,7 +962,7 @@
       rule(H - 14);
     }
 
-    const totalPages = 4 + (aiReading && aiReading.length ? 1 : 0);
+    const totalPages = 6 + (aiReading && aiReading.length ? 1 : 0);
 
     // ============== PAGE 1 — COVER + PLACEMENTS ==============
     pageFrame(1, totalPages, 'NATAL REPORT');
@@ -1067,9 +1105,193 @@
       kx += 28;
     }
 
-    // ============== PAGE 3 — ASTROCARTOGRAPHY MAP ==============
+    // ============== PAGE 3 — SOUL MISSION + BIG THREE ==============
     doc.addPage();
-    pageFrame(3, totalPages, 'ASTROCARTOGRAPHY');
+    pageFrame(3, totalPages, 'SOUL MISSION  ·  BIG THREE');
+
+    {
+      const D = window.tajnstvoSoulData || { SIGN_TEXTS:{}, LIFE_PATH:{}, NORTH_NODE:{} };
+
+      setText(text);
+      doc.setFont('times', 'normal');
+      doc.setFontSize(22);
+      doc.text('Soul Mission', M, 34);
+      rule(38);
+
+      // Life Path
+      const lp = chart.lifePath;
+      const lpEntry = lp != null ? D.LIFE_PATH[lp] : null;
+      let yL = 52;
+      setText(muted);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.text('LIFE PATH NUMBER', M, yL);
+      yL += 9;
+      // big numeral
+      setText(accent);
+      doc.setFont('times', 'italic');
+      doc.setFontSize(48);
+      doc.text(String(lp == null ? '?' : lp), M, yL + 6);
+      // name + line
+      setText(text);
+      doc.setFont('times', 'normal');
+      doc.setFontSize(16);
+      if (lpEntry) doc.text(lpEntry.name, M + 24, yL);
+      doc.setFontSize(11);
+      setText(muted);
+      doc.setFont('times', 'italic');
+      if (lpEntry) {
+        const lines = doc.splitTextToSize(lpEntry.line, W - 2*M - 24);
+        let yy = yL + 6;
+        for (const ln of lines) { doc.text(ln, M + 24, yy); yy += 5; }
+      }
+
+      // North Node
+      let yN = 100;
+      setText(muted);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.text('NORTH NODE  ·  EVOLUTIONARY DIRECTION', M, yN);
+      yN += 9;
+      const nnSign = lonToSign(chart.northNode);
+      setText(accent);
+      doc.setFont('times', 'italic');
+      doc.setFontSize(20);
+      doc.text(nnSign.sign + '  ' + nnSign.deg.toFixed(1) + '\u00b0', M, yN + 4);
+      const nnText = D.NORTH_NODE[nnSign.sign] || '';
+      setText(muted);
+      doc.setFont('times', 'italic');
+      doc.setFontSize(11);
+      const nnLines = doc.splitTextToSize(nnText, W - 2*M - 50);
+      let yy = yN;
+      for (const ln of nnLines) { doc.text(ln, M + 50, yy); yy += 5; }
+
+      // Big Three
+      let yB = 140;
+      setText(text);
+      doc.setFont('times', 'normal');
+      doc.setFontSize(22);
+      doc.text('Big Three', M, yB);
+      rule(yB + 4);
+      yB += 14;
+
+      const bigThree = [
+        { label: 'Sun', body: chart.sun, key: 'sun' },
+        { label: 'Moon', body: chart.moon, key: 'moon' },
+        { label: 'Rising', body: { lon: chart.ascendant, retro: false }, key: 'rising' },
+      ];
+      for (const item of bigThree) {
+        const sgn = lonToSign(item.body.lon);
+        const houseNum = item.key === 'rising' ? 1 : houseOfPlanet(item.body.lon, chart.ascendant);
+        const ord = (n) => n + (n%10===1&&n!==11?'st':n%10===2&&n!==12?'nd':n%10===3&&n!==13?'rd':'th');
+        // header line: "Sun in Scorpio · 5° · 8th house"
+        setText(text);
+        doc.setFont('times', 'italic');
+        doc.setFontSize(14);
+        const houseStr = item.key === 'rising' ? '' : '  ·  ' + ord(houseNum) + ' house';
+        doc.text(item.label + ' in ' + sgn.sign + '   ·   ' + sgn.deg.toFixed(1) + '\u00b0' + houseStr, M, yB);
+        yB += 6;
+        setText(muted);
+        doc.setFont('times', 'normal');
+        doc.setFontSize(10.5);
+        const txt = (D.SIGN_TEXTS[sgn.sign] || {})[item.key] || '';
+        const lines = doc.splitTextToSize(txt, W - 2*M);
+        for (const ln of lines) { doc.text(ln, M, yB); yB += 5; }
+        yB += 6;
+      }
+    }
+
+    // ============== PAGE 4 — WOUNDS + DOMAINS ==============
+    doc.addPage();
+    pageFrame(4, totalPages, 'WOUNDS  ·  DOMAINS');
+
+    {
+      const D = window.tajnstvoSoulData || { SIGN_TEXTS:{} };
+
+      setText(text);
+      doc.setFont('times', 'normal');
+      doc.setFontSize(22);
+      doc.text('Greatest Wounds', M, 34);
+      rule(38);
+
+      setText(muted);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.text('ANCHORED IN SATURN AND THE 12TH HOUSE.  THE INVITATION IS TO MEET, NOT BYPASS.', M, 46);
+
+      const satSign = lonToSign(chart.saturn.lon).sign;
+      const woundText = (D.SIGN_TEXTS[satSign] || {}).wounds || '';
+      let yW = 60;
+      setText(text);
+      doc.setFont('times', 'italic');
+      doc.setFontSize(14);
+      doc.text('Saturn in ' + satSign + '   ·   ' + lonToSign(chart.saturn.lon).deg.toFixed(1) + '\u00b0', M, yW);
+      yW += 7;
+      setText(muted);
+      doc.setFont('times', 'normal');
+      doc.setFontSize(11);
+      for (const ln of doc.splitTextToSize(woundText, W - 2*M)) { doc.text(ln, M, yW); yW += 5.4; }
+
+      // 12th house planets, if any
+      const twelfth = planetsInHouse(chart, 12);
+      yW += 4;
+      if (twelfth.length) {
+        setText(muted);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text('PLANETS IN THE 12TH HOUSE:  ' + twelfth.map(k => cap(k)).join(', '), M, yW);
+        yW += 6;
+        doc.setFont('times', 'italic');
+        doc.setFontSize(10);
+        setText(muted);
+        const blurb = 'Material the soul is metabolising privately. The 12th-house planets ask to be tended in solitude before they are spoken aloud.';
+        for (const ln of doc.splitTextToSize(blurb, W - 2*M)) { doc.text(ln, M, yW); yW += 4.8; }
+      }
+
+      // Domains heading
+      let yD = 130;
+      setText(text);
+      doc.setFont('times', 'normal');
+      doc.setFontSize(22);
+      doc.text('Domains', M, yD);
+      rule(yD + 4);
+      yD += 12;
+
+      const domains = [
+        { label: 'Relationships', signKey: 'love',   bodyKey: 'venus',   houseNum: 7,  intro: 'How partnership lands in this chart.' },
+        { label: 'Career',        signKey: 'career', bodyKey: 'sun',     houseNum: 10, intro: 'How public work and visibility take shape.' },
+        { label: 'Finances',      signKey: 'money',  bodyKey: 'jupiter', houseNum: 2,  intro: 'How resources gather, hold, and grow.' },
+      ];
+
+      for (const dom of domains) {
+        const body = chart[dom.bodyKey];
+        const sgn = lonToSign(body.lon).sign;
+        const inHouse = planetsInHouse(chart, dom.houseNum);
+        setText(text);
+        doc.setFont('times', 'italic');
+        doc.setFontSize(13);
+        doc.text(dom.label, M, yD);
+        yD += 5;
+        setText(muted);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        const houseLabel = inHouse.length
+          ? '  ·  ' + dom.houseNum + 'TH HOUSE: ' + inHouse.map(k => cap(k)).join(', ')
+          : '';
+        doc.text(cap(dom.bodyKey) + ' in ' + sgn + houseLabel, M, yD);
+        yD += 7;
+        setText(text);
+        doc.setFont('times', 'normal');
+        doc.setFontSize(10.5);
+        const txt = (D.SIGN_TEXTS[sgn] || {})[dom.signKey] || dom.intro;
+        for (const ln of doc.splitTextToSize(txt, W - 2*M)) { doc.text(ln, M, yD); yD += 5; }
+        yD += 6;
+      }
+    }
+
+    // ============== PAGE 5 — ASTROCARTOGRAPHY MAP ==============
+    doc.addPage();
+    pageFrame(5, totalPages, 'ASTROCARTOGRAPHY');
 
     setText(text);
     doc.setFont('times', 'normal');
@@ -1111,9 +1333,9 @@
       mly += 5.5;
     }
 
-    // ============== PAGE 4 — ASPECTS + TRANSITS ==============
+    // ============== PAGE 6 — ASPECTS + TRANSITS ==============
     doc.addPage();
-    pageFrame(4, totalPages, 'ASPECTS  ·  TRANSITS');
+    pageFrame(6, totalPages, 'ASPECTS  ·  TRANSITS');
 
     setText(text);
     doc.setFont('times', 'normal');
@@ -1190,10 +1412,10 @@
       );
     }
 
-    // ============== PAGE 5 (optional) — AI NATAL READING ==============
+    // ============== PAGE 7 (optional) — AI NATAL READING ==============
     if (aiReading && aiReading.length) {
       doc.addPage();
-      pageFrame(5, totalPages, 'NATAL READING');
+      pageFrame(7, totalPages, 'NATAL READING');
 
       setText(text);
       doc.setFont('times', 'normal');
@@ -1212,9 +1434,32 @@
       let ry = 60;
       const lineHeight = 5.2;
       const maxWidth = W - 2 * M;
-      let pageNum = 5;
+      let pageNum = 7;
+
+      const isLabel = (s) =>
+        s.length <= 40 && /[A-Z]/.test(s) && s === s.toUpperCase() && !/[a-z]/.test(s);
 
       for (const para of aiReading) {
+        if (isLabel(para)) {
+          // section header — render bold helvetica caps in accent
+          if (ry > H - 30) {
+            doc.addPage();
+            pageNum++;
+            pageFrame(pageNum, totalPages, 'NATAL READING (CONT.)');
+            ry = 36;
+          }
+          ry += 4;
+          setText(accent);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(9);
+          doc.text(para, M, ry);
+          ry += 7;
+          // restore body style
+          setText(text);
+          doc.setFont('times', 'normal');
+          doc.setFontSize(11);
+          continue;
+        }
         const lines = doc.splitTextToSize(para, maxWidth);
         for (const line of lines) {
           if (ry > H - 24) {
@@ -1474,7 +1719,7 @@
     const chart = getNatalChart();
     if (!note) return;
     if (!chart) {
-      note.textContent = 'PERSISTED · LOCAL STORAGE';
+      note.textContent = 'FILL THE FORM · GET YOUR SOUL REPORT';
       note.style.color = '';
       return;
     }

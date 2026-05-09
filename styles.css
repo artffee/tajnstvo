@@ -566,6 +566,17 @@ section {
   letter-spacing: 0.2em;
 }
 
+.profile__contents {
+  margin-top: 22px;
+  color: var(--warm);
+  letter-spacing: 0.18em;
+  line-height: 1.9;
+  max-width: 80ch;
+}
+.profile__contents:first-letter {
+  color: var(--amber);
+}
+
 @media (max-width: 900px) {
   .profile__form { grid-template-columns: 1fr 1fr; }
   .btn--field { grid-column: 1 / -1; }
