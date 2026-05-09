@@ -473,6 +473,67 @@
       }
     });
     loadProfile();
+
+    // ---- star map button ----
+    const starMapBtn = document.getElementById('starMapBtn');
+    if (starMapBtn) {
+      starMapBtn.addEventListener('click', async () => {
+        if (!window.tajnstvoStarMap) {
+          flashNote('STAR MAP MODULE NOT LOADED', 'warn');
+          return;
+        }
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+          flashNote('PDF LIBRARY NOT LOADED · CHECK NETWORK', 'warn');
+          return;
+        }
+
+        const data = Object.fromEntries(new FormData(profileForm).entries());
+        const cityName = (data.cityName || '').trim();
+        if (!cityName) { flashNote('CITY OF BIRTH REQUIRED', 'warn'); return; }
+        if (!data.birthDate || !data.birthTime) { flashNote('DATE AND TIME REQUIRED', 'warn'); return; }
+
+        const oldText = starMapBtn.textContent;
+        starMapBtn.disabled = true;
+        starMapBtn.textContent = 'Geocoding…';
+        flashNote('GEOCODING CITY …');
+
+        let loc;
+        try {
+          loc = await geocodeCity(cityName);
+        } catch (err) {
+          flashNote(`COULD NOT FIND CITY · ${(err.message || '').toUpperCase()}`, 'warn');
+          starMapBtn.disabled = false;
+          starMapBtn.textContent = oldText;
+          return;
+        }
+
+        writeProfile({
+          name:      data.name,
+          birthDate: data.birthDate,
+          birthTime: data.birthTime,
+          cityName:  loc.name,
+          lat:       loc.lat,
+          lon:       loc.lon,
+          tz:        loc.tz,
+        });
+        profileForm.elements.cityName.value = loc.name;
+        refreshAll();
+
+        starMapBtn.textContent = 'Drawing the sky…';
+        flashNote('DRAWING THE NIGHT SKY …');
+        try {
+          const chart = getNatalChart();
+          if (!chart) throw new Error('Could not compute chart');
+          window.tajnstvoStarMap(chart);
+          flashNote(`STAR MAP DOWNLOADED · ${(chart.profile.name || 'NATIVE').toUpperCase()}`);
+        } catch (err) {
+          flashNote(`STAR MAP FAILED · ${(err.message || '').toUpperCase()}`, 'warn');
+        } finally {
+          starMapBtn.disabled = false;
+          starMapBtn.textContent = oldText;
+        }
+      });
+    }
   }
 
 

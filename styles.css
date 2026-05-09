@@ -400,6 +400,17 @@ button { font-family: inherit; }
 
 .btn--field { align-self: end; height: 48px; }
 
+.profile__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-self: end;
+}
+.profile__actions .btn--field { flex: 1 1 auto; min-width: 0; }
+@media (max-width: 900px) {
+  .profile__actions { grid-column: 1 / -1; }
+}
+
 
 /* panels (right rail) ---------------------------------------------- */
 
@@ -526,7 +537,7 @@ section {
 
 .profile__form {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: 0.85fr 0.85fr 0.85fr 1.05fr 1.6fr;
   gap: 16px;
   align-items: end;
 }
