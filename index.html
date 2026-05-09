@@ -12,6 +12,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 <script src="starmap.js" defer></script>
 <script src="soulreport-data.js" defer></script>
+<script src="frequencies.js" defer></script>
 </head>
 <body>
 
@@ -480,10 +481,31 @@
   </section>
 
 
+  <!-- FREQUENCIES -->
+  <section class="freqs" id="frequencies">
+    <div class="section__head">
+      <span class="section__num">§ 07</span>
+      <h2 class="section__title">Healing Frequencies</h2>
+      <p class="section__sub">Solfeggio and high-frequency tones, generated live in your browser. Click any frequency to begin; click again to stop. Multiple may run together.</p>
+    </div>
+
+    <div class="freq__toolbar mono mono--small">
+      <button class="chip" type="button" data-freq-action="stop-all">◼ STOP ALL</button>
+      <label class="freq__volume">
+        <span>VOLUME</span>
+        <input type="range" min="0" max="1" step="0.01" value="0.6" data-freq-action="volume" />
+      </label>
+      <span class="freq__legend">PURE SINE WAVES · DUAL OSCILLATOR · LOW‑PASSED FOR WARMTH</span>
+    </div>
+
+    <div class="freq__grid"></div>
+  </section>
+
+
   <!-- SPEC -->
   <section class="spec" id="spec">
     <div class="section__head">
-      <span class="section__num">§ 07</span>
+      <span class="section__num">§ 08</span>
       <h2 class="section__title">Specification</h2>
       <p class="section__sub">The architecture, in one passage.</p>
     </div>
