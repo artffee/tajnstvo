@@ -1789,42 +1789,166 @@
   const breathLabel = document.getElementById('breathLabel');
   const themeList = document.getElementById('themeList');
 
+  // Six themed meditation scripts (6 paragraphs each, ~30 words per).
+  // Spoken via Web Speech API at ~0.85x rate with 2.4 s pauses between beats.
+  const MEDITATION_SCRIPTS = {
+    lunar: [
+      'Settle in. Let the body land where it sits. Notice the weight of you arriving back into the room.',
+      'Tonight we work with the lunar tide. The moon does not push the ocean; it permits the ocean to remember which way is home.',
+      'Breathe in, and let something rise that you have been holding low. Breathe out, and let it go down again, softer than it came up.',
+      'You do not have to fix the feeling. You only have to feel it the way the tide feels the moon: without arguing.',
+      'The moon will turn whether or not you keep watch. You are allowed to rest. The watching is being done for you.',
+      'When you are ready, return. Carry the softness with you. The tide will be where you left it.',
+    ],
+    solar: [
+      'Settle in. Sit as if your spine were a stem and your head a flower turning toward light.',
+      'Today we work with the solar flame. The sun does not try to be the sun; it simply burns, and the world is illuminated as a side effect.',
+      'Breathe in heat. Breathe out the part of you that has been performing instead of shining.',
+      'There is a difference between being seen and being witnessed. The sun is witnessed without being watched. You are allowed to be the same.',
+      'What you have to give does not run out by being given. It is more like fire than like money.',
+      'When you are ready, return. Take the warmth with you. It belongs to the room now.',
+    ],
+    venus: [
+      'Settle in. Let your hands rest open. Let your jaw soften. Let the front of you uncoil.',
+      'We work with the venusian bloom. Venus does not chase. Venus arrives slowly, beautifully, and stays exactly as long as she chooses.',
+      'Breathe in pleasure. Not earned pleasure, not deserved pleasure. Just the pleasure of breath itself.',
+      'You do not have to be useful to be loved. You do not have to perform value to deserve being met.',
+      'The body is not a problem to solve. The body is the place love is happening, right now, without your permission.',
+      'When you are ready, return. Stay soft. The softness is not weakness; it is the strongest material the body knows.',
+    ],
+    saturn: [
+      'Settle in. Sit heavy. Let the chair carry you. Let gravity do the work it was made to do.',
+      'We work with the saturnian stone. Saturn is the gift of slowness. Saturn says: you have time, you have always had time, you will continue to have time.',
+      'Breathe in patience. Breathe out the urgency that was given to you by someone who could not stand still.',
+      'The thing you are building is not behind schedule. The schedule was someone else’s. You are exactly where the building wants you to be.',
+      'Discipline is not punishment. Discipline is the love of a future self for the present one.',
+      'When you are ready, return. Move slower than you were moving before. Keep the weight.',
+    ],
+    cosmic: [
+      'Settle in. Feel the ground beneath you. Feel the room around you. Feel the planet under the room.',
+      'We work with cosmic alignment. The body is small, the room is medium, the planet is large, and the field that holds all of it is larger again.',
+      'Breathe in the size of you. Breathe out into the size of the room. Breathe in the size of the room. Breathe out into the size of the sky.',
+      'You are not separate from any of it. You never were. The boundary of the skin is a courtesy, not a fact.',
+      'There is no place you have to get to. The alignment is what you are made of, when you are not arguing with it.',
+      'When you are ready, return. Notice the room. Notice the body. Notice the sky inside the body.',
+    ],
+    today: [
+      'Settle in. Let the day land. You have done what you have done; you have left undone what you have left undone.',
+      'We work with the sky as it is, this hour. There is weather above us, and weather inside us. We will not pretend they are unrelated.',
+      'Breathe in whatever the day asked of you. Breathe out whatever the day took.',
+      'Some of what you are carrying is not yours. Some of it is. You do not have to know which is which to put some of it down.',
+      'Tomorrow is allowed to be different. You are allowed to be different. Permission was always available.',
+      'When you are ready, return. The day continues. You continue with it, but lighter.',
+    ],
+  };
+
+  let selectedTheme = 'lunar';
   if (themeList) {
     themeList.addEventListener('click', (e) => {
       const li = e.target.closest('li[data-theme]');
       if (!li) return;
       themeList.querySelectorAll('li').forEach(x => x.classList.remove('is-on'));
       li.classList.add('is-on');
+      selectedTheme = li.dataset.theme;
     });
+  }
+
+  // Pick a calm female English voice if available.
+  function pickVoice() {
+    if (!('speechSynthesis' in window)) return null;
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices.length) return null;
+    const preferred = ['Samantha', 'Karen', 'Moira', 'Serena', 'Fiona', 'Tessa', 'Allison'];
+    for (const name of preferred) {
+      const v = voices.find(x => x.name === name);
+      if (v) return v;
+    }
+    return voices.find(v => /^en[-_]/i.test(v.lang)) || voices[0];
+  }
+  if ('speechSynthesis' in window && window.speechSynthesis.getVoices().length === 0) {
+    window.speechSynthesis.addEventListener('voiceschanged', () => {});
   }
 
   let breathing = false;
   let breathTimer = null;
+  let speechActive = false;
+
+  function stopBreathing() {
+    breathing = false;
+    if (orb) orb.classList.remove('is-breathing');
+    clearTimeout(breathTimer);
+    if (breathLabel) {
+      breathLabel.textContent = 'PRESS BEGIN';
+      breathLabel.style.color = '';
+    }
+    if (orbStart) orbStart.textContent = 'Begin meditation';
+    if (speechActive && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    speechActive = false;
+  }
+
+  function startBreathing() {
+    breathing = true;
+    if (orb) orb.classList.add('is-breathing');
+    if (orbStart) orbStart.textContent = 'Pause meditation';
+
+    // breath label cycle
+    let phase = 0;
+    const phases = ['INHALE', 'HOLD', 'EXHALE', 'REST'];
+    const timings = [3500, 1000, 3500, 1000];
+    const cycle = () => {
+      if (!breathing) return;
+      if (breathLabel) {
+        breathLabel.textContent = phases[phase];
+        breathLabel.style.color = phase === 0 ? '#ffb37a'
+                                  : phase === 2 ? '#4dd6c8'
+                                  : '#8a8676';
+      }
+      breathTimer = setTimeout(() => {
+        phase = (phase + 1) % phases.length;
+        cycle();
+      }, timings[phase]);
+    };
+    cycle();
+
+    // speak meditation
+    if ('speechSynthesis' in window) {
+      const script = MEDITATION_SCRIPTS[selectedTheme] || MEDITATION_SCRIPTS.lunar;
+      const voice = pickVoice();
+      speechActive = true;
+      let i = 0;
+      const speakNext = () => {
+        if (!breathing || !speechActive || i >= script.length) {
+          if (i >= script.length && breathing) {
+            // gracefully end
+            stopBreathing();
+            if (breathLabel) breathLabel.textContent = 'COMPLETE';
+          }
+          return;
+        }
+        const u = new SpeechSynthesisUtterance(script[i]);
+        if (voice) u.voice = voice;
+        u.rate  = 0.86;
+        u.pitch = 0.95;
+        u.volume = 0.85;
+        u.onend = () => {
+          if (!breathing) return;
+          i++;
+          setTimeout(speakNext, 2400);
+        };
+        u.onerror = () => { speechActive = false; };
+        window.speechSynthesis.speak(u);
+      };
+      // start after a beat so first INHALE shows
+      setTimeout(speakNext, 1800);
+    }
+  }
+
   if (orbStart) {
     orbStart.addEventListener('click', () => {
-      breathing = !breathing;
-      orb.classList.toggle('is-breathing', breathing);
-      orbStart.textContent = breathing ? 'Pause meditation' : 'Begin meditation';
-
-      if (breathing) {
-        let phase = 0;
-        const phases = ['INHALE', 'HOLD', 'EXHALE', 'REST'];
-        const timings = [3500, 1000, 3500, 1000];
-        const cycle = () => {
-          breathLabel.textContent = phases[phase];
-          breathLabel.style.color = phase === 0 ? '#ffb37a' :
-                                     phase === 2 ? '#4dd6c8' : '#8a8676';
-          breathTimer = setTimeout(() => {
-            phase = (phase + 1) % phases.length;
-            cycle();
-          }, timings[phase]);
-        };
-        cycle();
-      } else {
-        clearTimeout(breathTimer);
-        breathLabel.textContent = 'PAUSED';
-        breathLabel.style.color = '';
-      }
+      if (breathing) stopBreathing();
+      else            startBreathing();
     });
   }
 
@@ -2065,6 +2189,187 @@
         leadStop.textContent = 'Stop the lead';
       }
     });
+  }
+
+
+  /* ---------- molybdomancy ritual flow + reading ---------- */
+
+  const LEAD_READINGS = {
+    BIRD: {
+      form:    'A bird shape — a reach upward, wings half-set.',
+      mood:    'A lift just before separation. A wing-set unsure if it will rise.',
+      motion:  'The lead moved before it settled. Hesitation, then ascent.',
+      meaning: 'News is travelling toward you. Not big. True.',
+      counsel: 'Watch what flies across your morning the next three days. Note who returns from a distance.',
+    },
+    HAND: {
+      form:    'A hand — five lobes, open palm.',
+      mood:    'Capable, holding, a little tired.',
+      motion:  'Open, close, open again. The hand cannot decide whether to give or to keep.',
+      meaning: 'Something is being given to you, or asked of you, that requires you to be open without grasping.',
+      counsel: 'Say yes to one favour and no to one obligation this week. Notice which felt heavier.',
+    },
+    SERPENT: {
+      form:    'A serpent — elongated, coiling, a thin line.',
+      mood:    'Patient, watchful, deep. Intensity that does not announce itself.',
+      motion:  'Coiled, then long, then coiled again. Movement that returns to its own beginning.',
+      meaning: 'A truth you have been circling is closer than you think. An old skin is ready to be shed.',
+      counsel: 'Stop performing the version of yourself you outgrew two years ago.',
+    },
+    HEART: {
+      form:    'A heart — two lobes, soft centre.',
+      mood:    'Tender, present, slightly bruised.',
+      motion:  'A beating that has had to slow down to keep itself company.',
+      meaning: 'A love you had marked closed has weather around it. The chapter is not as finished as you reported.',
+      counsel: 'Reach toward one person you have not allowed yourself to miss.',
+    },
+    SHIP: {
+      form:    'A ship — long hull, tilted toward a horizon.',
+      mood:    'Outbound. A leaving that wants to be a choosing.',
+      motion:  'Tipped slightly, riding wave-set, holding course.',
+      meaning: 'A long journey is being set up while you sleep. A part of you has decided without consulting the rest.',
+      counsel: 'Pack what travels well. Leave the rest. Trust the part that already left.',
+    },
+    TREE: {
+      form:    'A tree — branching upward, rooted below.',
+      mood:    'Rooted, slow-growing, holding more weight than it looks.',
+      motion:  'Almost none. Internal. Growth too gradual to see in a single season.',
+      meaning: 'What you are building requires a season you have not yet been through.',
+      counsel: 'Stop measuring it monthly. Plant the next thing. Both will grow.',
+    },
+    MOON: {
+      form:    'A moon — round, single, contained.',
+      mood:    'Reflective, cyclical, in-between. Neither full nor new.',
+      motion:  'A turning, a turning, a turning.',
+      meaning: 'An inner cycle is mid-arc. Not nothing, not yet visible.',
+      counsel: 'Stay private with what is changing in you. Tell two people, not ten.',
+    },
+    WOLF: {
+      form:    'A wolf — three lobes, lean and watchful.',
+      mood:    'Loyal, hungry, observant.',
+      motion:  'A long lope across the edge of a clearing.',
+      meaning: 'Your people are nearer than you have allowed. So is your appetite, which you have been politely starving.',
+      counsel: 'Eat with someone this week. Not for politeness. For pack.',
+    },
+    CROSS: {
+      form:    'A cross — two lines meeting at a centre.',
+      mood:    'Decisive, intersected, no longer two paths.',
+      motion:  'A meeting at the centre. Stillness after.',
+      meaning: 'Two threads of your life are about to cross. The crossing is the point, not the separation that follows.',
+      counsel: 'Be present at the intersection. Do not skip ahead to the consequence.',
+    },
+    MOUNTAINS: {
+      form:    'Mountains — a ridge of peaks, weight low.',
+      mood:    'Old, weathered, indifferent to the timetable.',
+      motion:  'None visible. Geology, not behaviour.',
+      meaning: 'A challenge in your life is larger than the year it sits in. Treat it accordingly.',
+      counsel: 'Stop asking the mountain to be smaller. Get equipment.',
+    },
+  };
+
+  const molybCard    = document.getElementById('molybCard');
+  const leadRitual   = document.getElementById('leadRitual');
+  const leadPour     = document.getElementById('leadPour');
+  const leadReading  = document.getElementById('leadReading');
+
+  function setRitualStep(n) {
+    if (!leadRitual) return;
+    leadRitual.querySelectorAll('.lead-ritual__panel').forEach(p => {
+      p.hidden = parseInt(p.dataset.step, 10) !== n;
+    });
+    leadRitual.querySelectorAll('.lead-ritual__steps span').forEach(s => {
+      s.classList.toggle('is-on', parseInt(s.dataset.r, 10) <= n);
+    });
+  }
+
+  function runRitualBreathing(onDone) {
+    const orbEl = leadRitual && leadRitual.querySelector('.lead-ritual__breath-orb');
+    const label = document.getElementById('leadBreathLabel');
+    if (!orbEl || !label) { onDone && onDone(); return; }
+    let breath = 0;
+    let inhaling = true;
+    const cycle = () => {
+      label.textContent = inhaling ? 'INHALE' : 'EXHALE';
+      orbEl.classList.toggle('is-in', inhaling);
+      setTimeout(() => {
+        inhaling = !inhaling;
+        if (!inhaling) breath++;
+        if (breath >= 3 && inhaling) {
+          onDone && onDone();
+        } else {
+          cycle();
+        }
+      }, 3600);
+    };
+    cycle();
+  }
+
+  function showReading() {
+    if (!leadReading) return;
+    const arch = ARCHETYPES[archIdx] || ARCHETYPES[0];
+    const data = LEAD_READINGS[arch.name];
+    if (!data) return;
+    leadReading.querySelector('[data-r="form"]').textContent    = data.form;
+    leadReading.querySelector('[data-r="mood"]').textContent    = data.mood;
+    leadReading.querySelector('[data-r="motion"]').textContent  = data.motion;
+    leadReading.querySelector('[data-r="meaning"]').textContent = data.meaning;
+    leadReading.querySelector('[data-r="counsel"]').textContent = data.counsel;
+    leadReading.hidden = false;
+    if (molybCard) molybCard.dataset.stage = 'reading';
+  }
+
+  // wire ritual buttons
+  if (leadRitual) {
+    const nextBtn = leadRitual.querySelector('[data-action="ritual-next"]');
+    const pourBtn = leadRitual.querySelector('[data-action="ritual-pour"]');
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        setRitualStep(2);
+        runRitualBreathing(() => setRitualStep(3));
+      });
+    }
+
+    if (pourBtn) {
+      pourBtn.addEventListener('click', () => {
+        leadRitual.hidden = true;
+        if (leadPour) leadPour.hidden = false;
+        if (molybCard) molybCard.dataset.stage = 'pouring';
+        // resize the canvas now that it has dimensions
+        setTimeout(() => {
+          if (typeof resizeBlob === 'function') resizeBlob();
+        }, 50);
+      });
+    }
+  }
+
+  // when the lead has cooled, surface the reading after the crack animation
+  if (leadStop) {
+    leadStop.addEventListener('click', () => {
+      setTimeout(showReading, 3200);
+    });
+  }
+
+  // new ritual
+  if (leadReading) {
+    const restart = leadReading.querySelector('[data-action="ritual-restart"]');
+    if (restart) {
+      restart.addEventListener('click', () => {
+        leadReading.hidden = true;
+        if (leadPour)   leadPour.hidden   = true;
+        if (leadRitual) leadRitual.hidden = false;
+        setRitualStep(1);
+        frozen = false;
+        cracks = [];
+        trembleAmp = 0;
+        if (leadStop) { leadStop.disabled = false; leadStop.textContent = 'Stop the lead'; }
+        const q = document.getElementById('leadQuestion');
+        const c = document.getElementById('leadConfession');
+        if (q) q.value = '';
+        if (c) c.value = '';
+        if (molybCard) molybCard.dataset.stage = 'ritual';
+      });
+    }
   }
 
   if (blob) {

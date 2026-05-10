@@ -453,28 +453,73 @@
       </article>
 
       <!-- MOLYBDOMANCY -->
-      <article class="ritual__card ritual__card--lead">
+      <article class="ritual__card ritual__card--lead" id="molybCard" data-stage="ritual">
         <header class="ritual__head">
           <span class="card__glyph">◐</span>
           <h3>Molybdomancy</h3>
           <span class="mono mono--small">R · 02</span>
         </header>
 
-        <canvas id="leadBlob" width="540" height="420" aria-label="Molten lead blob"></canvas>
+        <!-- THREE-STEP RITUAL -->
+        <div class="lead-ritual" id="leadRitual">
+          <div class="lead-ritual__steps mono mono--small">
+            <span class="is-on" data-r="1">QUESTION</span>
+            <span data-r="2">BREATH</span>
+            <span data-r="3">CONFESSION</span>
+          </div>
 
-        <p class="proverb">
-          <i>Who reads the lead reads the heart.</i><br>
-          <span class="mono mono--small">— A FOLK SAYING</span>
-        </p>
+          <div class="lead-ritual__panel" data-step="1">
+            <p class="lead-ritual__lead">What do you bring to the lead?</p>
+            <textarea class="lead-ritual__input" id="leadQuestion" rows="3" placeholder="The unspoken question…"></textarea>
+            <button type="button" class="btn btn--solid" data-action="ritual-next">Continue</button>
+          </div>
 
-        <ul class="archetypes mono mono--small" id="archetypeList">
-          <li class="is-on">BIRD</li><li>HAND</li><li>SERPENT</li><li>HEART</li>
-          <li>SHIP</li><li>TREE</li><li>MOON</li><li>WOLF</li><li>CROSS</li><li>MOUNTAINS</li>
-        </ul>
+          <div class="lead-ritual__panel" data-step="2" hidden>
+            <p class="lead-ritual__lead">Three breaths. The body settles before the lead is poured.</p>
+            <div class="lead-ritual__breath">
+              <div class="lead-ritual__breath-orb"></div>
+              <div class="lead-ritual__breath-label mono mono--small" id="leadBreathLabel">INHALE</div>
+            </div>
+          </div>
 
-        <div class="ritual__cta">
-          <button class="btn btn--solid" id="leadStop">Stop the lead</button>
-          <button class="btn btn--ghost mono mono--small" id="leadReset">↻ RESET</button>
+          <div class="lead-ritual__panel" data-step="3" hidden>
+            <p class="lead-ritual__lead">Speak what you have not said.</p>
+            <textarea class="lead-ritual__input" id="leadConfession" rows="3" placeholder="What you bring to the lead but not to anyone…"></textarea>
+            <button type="button" class="btn btn--solid" data-action="ritual-pour">Pour the lead</button>
+          </div>
+        </div>
+
+        <!-- LEAD ANIMATION + ARCHETYPES -->
+        <div class="lead-pour" id="leadPour" hidden>
+          <canvas id="leadBlob" width="540" height="420" aria-label="Molten lead blob"></canvas>
+
+          <p class="proverb">
+            <i>Who reads the lead reads the heart.</i><br>
+            <span class="mono mono--small">— A FOLK SAYING</span>
+          </p>
+
+          <ul class="archetypes mono mono--small" id="archetypeList">
+            <li class="is-on">BIRD</li><li>HAND</li><li>SERPENT</li><li>HEART</li>
+            <li>SHIP</li><li>TREE</li><li>MOON</li><li>WOLF</li><li>CROSS</li><li>MOUNTAINS</li>
+          </ul>
+
+          <div class="ritual__cta">
+            <button class="btn btn--solid" id="leadStop">Stop the lead</button>
+            <button class="btn btn--ghost mono mono--small" id="leadReset">↻ RESET</button>
+          </div>
+        </div>
+
+        <!-- READING (appears after lead cools) -->
+        <div class="lead-reading" id="leadReading" hidden>
+          <p class="lead-reading__eyebrow mono mono--small">THE READING</p>
+          <dl class="lead-reading__dl">
+            <dt>Form</dt>     <dd data-r="form">—</dd>
+            <dt>Mood</dt>     <dd data-r="mood">—</dd>
+            <dt>Motion</dt>   <dd data-r="motion">—</dd>
+            <dt>Meaning</dt>  <dd data-r="meaning">—</dd>
+            <dt>Counsel</dt>  <dd data-r="counsel">—</dd>
+          </dl>
+          <button type="button" class="btn btn--ghost mono mono--small" data-action="ritual-restart">↻ NEW RITUAL</button>
         </div>
       </article>
 

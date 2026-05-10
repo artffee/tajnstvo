@@ -1036,6 +1036,146 @@ section {
   border-color: var(--amber);
 }
 
+
+/* molybdomancy ritual + reading ------------------------------------- */
+
+.lead-ritual {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 8px 0 0;
+}
+.lead-ritual__steps {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.lead-ritual__steps span {
+  position: relative;
+  padding: 8px 14px;
+  color: var(--warm);
+  letter-spacing: 0.22em;
+  font-size: 10px;
+  border-bottom: 1px solid var(--line);
+  flex: 1 1 0;
+  text-align: center;
+  transition: color 0.25s, border-bottom-color 0.25s;
+}
+.lead-ritual__steps span.is-on {
+  color: var(--amber);
+  border-bottom-color: var(--amber);
+}
+
+.lead-ritual__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+.lead-ritual__panel[hidden] { display: none; }
+.lead-ritual__lead {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 19px;
+  color: var(--cream);
+  margin: 0;
+  max-width: 32ch;
+}
+
+.lead-ritual__input {
+  width: 100%;
+  max-width: 420px;
+  min-height: 80px;
+  padding: 12px 14px;
+  background: rgba(8, 10, 16, 0.55);
+  color: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-family: var(--serif);
+  font-size: 14px;
+  line-height: 1.55;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.18s;
+}
+.lead-ritual__input:focus { border-color: var(--amber); }
+.lead-ritual__input::placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.lead-ritual__breath {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 0;
+}
+.lead-ritual__breath-orb {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255, 240, 220, 0.95), rgba(255, 140, 66, 0.55) 40%, rgba(120, 50, 20, 0.4) 70%, transparent 100%);
+  box-shadow: 0 0 40px rgba(255, 140, 66, 0.3);
+  transform: scale(0.7);
+  transition: transform 3.4s ease-in-out;
+}
+.lead-ritual__breath-orb.is-in { transform: scale(1.2); }
+.lead-ritual__breath-label {
+  color: var(--amber);
+  letter-spacing: 0.28em;
+}
+
+/* hide archetypes pill list when not actively pouring */
+.ritual__card--lead[data-stage="ritual"] #archetypeList,
+.ritual__card--lead[data-stage="reading"] #archetypeList { display: none; }
+
+.lead-reading {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 8px 0 4px;
+}
+.lead-reading[hidden] { display: none; }
+.lead-pour[hidden] { display: none; }
+.lead-ritual[hidden] { display: none; }
+.lead-reading__eyebrow {
+  color: var(--amber);
+  letter-spacing: 0.28em;
+  text-align: center;
+  margin: 0;
+}
+.lead-reading__dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 16px;
+  margin: 4px 0 6px;
+}
+.lead-reading__dl dt {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--warm);
+  text-transform: uppercase;
+  padding-top: 4px;
+}
+.lead-reading__dl dd {
+  margin: 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--cream);
+}
+.lead-reading [data-action="ritual-restart"] {
+  align-self: center;
+  margin-top: 8px;
+}
+
 @media (max-width: 1000px) {
   .ritual__grid { grid-template-columns: 1fr; }
 }
