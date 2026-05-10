@@ -14,6 +14,7 @@
 <script src="soulreport-data.js" defer></script>
 <script src="frequencies.js" defer></script>
 <script src="frequency-reader.js" defer></script>
+<script src="program.js" defer></script>
 </head>
 <body>
 
@@ -629,10 +630,58 @@
   </section>
 
 
+  <!-- 45-DAY PROGRAM -->
+  <section class="program" id="program">
+    <div class="section__head">
+      <span class="section__num">§ 09</span>
+      <h2 class="section__title">45-Day Sky Companion</h2>
+      <p class="section__sub">A guided arc through the next six weeks of your sky. Each day surfaces the day's strongest transit and pairs it with a theme, a single action, and a reflection.</p>
+    </div>
+
+    <!-- pre-start -->
+    <div class="program__intro" id="programIntro">
+      <p class="program__intro-lead">
+        Six weeks. One card a day. Anchored in your real transits.
+      </p>
+      <p class="program__intro-body">
+        The program reads your birth chart and the calendar above it, picks the strongest transit aspect each day, and renders a card you can sit with: a frame for the day, a small action, a question to carry. It runs in your browser; once started it persists across reloads.
+      </p>
+      <button class="btn btn--solid btn--lg" id="programBegin">Begin the 45 days</button>
+      <p class="program__note mono mono--small" id="programNote">
+        SAVE YOUR BIRTH PROFILE ABOVE FIRST · GENERATE A REPORT TO CACHE THE CHART
+      </p>
+    </div>
+
+    <!-- active -->
+    <div class="program__active" id="programActive" hidden>
+      <div class="program__current" id="programCurrent" data-state="open">
+        <header class="program__current-head">
+          <span class="program__day-label mono mono--small">DAY <span id="programDayNum">1</span> / 45</span>
+          <span class="program__date" id="programDate">—</span>
+        </header>
+        <p class="program__transit mono mono--small" id="programTransit">—</p>
+
+        <dl class="program__dl">
+          <dt>The theme</dt>      <dd id="programTheme">—</dd>
+          <dt>The action</dt>     <dd id="programAction">—</dd>
+          <dt>The reflection</dt> <dd id="programReflection">—</dd>
+        </dl>
+
+        <footer class="program__current-foot">
+          <button class="btn btn--solid" type="button" id="programDone">✓ Mark complete</button>
+          <button class="btn btn--ghost mono mono--small" type="button" id="programReset">↻ END PROGRAM</button>
+        </footer>
+      </div>
+
+      <div class="program__timeline" id="programTimeline" aria-label="Forty-five day timeline"></div>
+    </div>
+  </section>
+
+
   <!-- SPEC -->
   <section class="spec" id="spec">
     <div class="section__head">
-      <span class="section__num">§ 09</span>
+      <span class="section__num">§ 10</span>
       <h2 class="section__title">Specification</h2>
       <p class="section__sub">The architecture, in one passage.</p>
     </div>

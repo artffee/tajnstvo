@@ -3153,4 +3153,15 @@
 
   refreshApiStatus();
 
+
+  /* ---------- expose a small engine API for other modules ---------- */
+  window.tajnstvo = window.tajnstvo || {};
+  Object.assign(window.tajnstvo, {
+    getNatalChart,
+    computeChart,
+    findAspects,
+    lonToSign,
+    SIGNS,
+  });
+
 })();

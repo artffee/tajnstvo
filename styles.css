@@ -1576,6 +1576,192 @@ section {
 }
 
 
+/* 45-day program ---------------------------------------------------- */
+
+.program {
+  position: relative;
+}
+
+.program__intro {
+  max-width: 70ch;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.program__intro-lead {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(22px, 3vw, 32px);
+  color: var(--cream);
+  margin: 0;
+  line-height: 1.25;
+}
+.program__intro-body {
+  margin: 0;
+  color: var(--cream-dim);
+  font-size: 15.5px;
+  line-height: 1.6;
+}
+.btn--lg {
+  align-self: flex-start;
+  padding: 16px 28px;
+  font-size: 12px;
+  letter-spacing: 0.24em;
+}
+.program__note {
+  color: var(--warm);
+  letter-spacing: 0.22em;
+}
+.program__active[hidden],
+.program__intro[hidden] { display: none; }
+
+.program__active {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 28px;
+  align-items: start;
+}
+@media (max-width: 1000px) {
+  .program__active { grid-template-columns: 1fr; }
+}
+
+.program__current {
+  padding: 30px 32px;
+  background: linear-gradient(180deg, rgba(20, 23, 31, 0.92) 0%, rgba(13, 16, 24, 0.88) 100%);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.program__current::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 60% at 0% 0%, rgba(255, 140, 66, 0.08), transparent 60%);
+  pointer-events: none;
+}
+.program__current[data-state="done"]   { border-color: rgba(77, 214, 200, 0.4); }
+.program__current[data-state="future"] { opacity: 0.85; }
+
+.program__current-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.program__day-label { color: var(--warm); letter-spacing: 0.22em; }
+.program__day-label span {
+  color: var(--amber);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 24px;
+}
+.program__date {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--cream);
+}
+
+.program__transit {
+  color: var(--cream-dim);
+  margin: 0;
+  letter-spacing: 0.12em;
+  font-size: 11px;
+  padding: 10px 14px;
+  background: rgba(8, 10, 16, 0.55);
+  border-left: 2px solid var(--amber);
+  border-radius: 4px;
+}
+
+.program__dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px 18px;
+  margin: 4px 0;
+}
+.program__dl dt {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--warm);
+  text-transform: uppercase;
+  padding-top: 6px;
+  white-space: nowrap;
+}
+.program__dl dd {
+  margin: 0;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--cream);
+}
+
+.program__current-foot {
+  margin-top: 8px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.program__current-foot .btn--solid:disabled {
+  background: rgba(77, 214, 200, 0.2);
+  border-color: rgba(77, 214, 200, 0.4);
+  color: var(--cyan);
+  cursor: not-allowed;
+}
+
+.program__timeline {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 6px;
+  padding: 20px;
+  background: rgba(17, 20, 28, 0.55);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+@media (max-width: 600px) {
+  .program__timeline { grid-template-columns: repeat(7, 1fr); }
+}
+
+.prog-pill {
+  background: rgba(8, 10, 16, 0.6);
+  border: 1px solid var(--line);
+  color: var(--warm);
+  padding: 8px 0;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.12s;
+  text-align: center;
+}
+.prog-pill:hover { color: var(--cream); border-color: var(--cream); transform: translateY(-1px); }
+.prog-pill.is-today {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: var(--ink);
+  font-weight: 600;
+}
+.prog-pill.is-viewing {
+  outline: 1px solid var(--amber);
+  outline-offset: 2px;
+}
+.prog-pill.is-done {
+  background: rgba(77, 214, 200, 0.15);
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+.prog-pill.is-future {
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+
 /* spec -------------------------------------------------------------- */
 
 .spec__grid {
