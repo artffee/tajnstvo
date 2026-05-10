@@ -2658,6 +2658,200 @@
   }
 
 
+  /* ---------- synastry: real chart-vs-chart math ---------- */
+
+  let synastryPartner = null;
+
+  function computeSynastryAspects(chartA, chartB) {
+    const planets = ['sun','moon','mercury','venus','mars','jupiter','saturn'];
+    const out = [];
+    for (const a of planets) {
+      for (const b of planets) {
+        const A = chartA[a], B = chartB[b];
+        if (!A || !B) continue;
+        let diff = Math.abs(A.lon - B.lon);
+        if (diff > 180) diff = 360 - diff;
+        for (const def of ASPECTS_DEFS) {
+          const off = Math.abs(diff - def.angle);
+          if (off <= def.orb * 0.95) {
+            out.push({ from: a, to: b, aspect: def, exact: off });
+          }
+        }
+      }
+    }
+    return out.sort((x, y) => x.exact - y.exact);
+  }
+
+  function categorizeSynastry(aspects) {
+    const isPair = (a, p1, p2) =>
+      (a.from === p1 && a.to === p2) || (a.from === p2 && a.to === p1);
+    const isAny = (a, set) => set.includes(a.from) && set.includes(a.to);
+    const chemistry = aspects.filter(a =>
+      isPair(a, 'sun', 'mars')   || isPair(a, 'venus', 'mars') ||
+      isPair(a, 'sun', 'venus')  || isPair(a, 'mars', 'mars')  ||
+      isPair(a, 'venus', 'venus')
+    );
+    const communication = aspects.filter(a =>
+      isPair(a, 'mercury', 'mercury') || isPair(a, 'sun', 'mercury') ||
+      isPair(a, 'moon', 'mercury')    || isPair(a, 'mercury', 'venus')
+    );
+    const bond = aspects.filter(a =>
+      isPair(a, 'moon', 'moon') || isPair(a, 'sun', 'moon') ||
+      isPair(a, 'moon', 'venus') || isPair(a, 'sun', 'sun')
+    );
+    const friction = aspects.filter(a =>
+      (a.aspect.name === 'SQUARE' || a.aspect.name === 'OPP') &&
+      isAny(a, ['sun','moon','mercury','venus','mars'])
+    );
+    return { chemistry, communication, bond, friction };
+  }
+
+  function synastryScore(aspects) {
+    let s = 5;
+    const personal = ['sun','moon','venus','mars'];
+    for (const a of aspects) {
+      const isPersonal = personal.includes(a.from) && personal.includes(a.to);
+      const w = isPersonal ? 1.5 : 0.8;
+      let v = 0;
+      if (a.aspect.name === 'TRINE')   v = 0.55;
+      if (a.aspect.name === 'SEXTILE') v = 0.32;
+      if (a.aspect.name === 'CONJ')    v = 0.36;
+      if (a.aspect.name === 'SQUARE')  v = -0.38;
+      if (a.aspect.name === 'OPP')     v = -0.28;
+      s += v * w;
+    }
+    return Math.max(1, Math.min(10, s));
+  }
+
+  function synastryVerdict(score) {
+    if (score >= 8.5) return 'An unusually well-matched chart pair. The weather outside will still need a roof.';
+    if (score >= 7)   return 'A workable chart with real chemistry and manageable friction.';
+    if (score >= 5.5) return 'A chart with both pull and push; the work is the calibration.';
+    if (score >= 4)   return 'Significant friction; growth-oriented if both partners are intentional.';
+    return                'A challenging pair; the friction outweighs the natural ease.';
+  }
+
+  const ASPECT_VERB = { CONJ:'conjunct', SEXTILE:'sextiles', SQUARE:'squares', TRINE:'trines', OPP:'opposes' };
+
+  function describeAspects(aspects, max = 4) {
+    if (!aspects.length) return null;
+    const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+    return aspects.slice(0, max).map(a =>
+      `Your ${cap(a.from)} ${ASPECT_VERB[a.aspect.name] || a.aspect.name.toLowerCase()} their ${cap(a.to)} (orb ${a.exact.toFixed(1)}°).`
+    ).join(' ');
+  }
+
+  function buildPartnerChart(profile) {
+    const utc = profileToUTC(profile);
+    if (!utc || isNaN(utc.getTime())) return null;
+    const c = computeChart(utc);
+    c.profile = profile;
+    c.city = { name: profile.cityName, lat: profile.lat, lon: profile.lon, tz: profile.tz };
+    c.ascendant = computeAscendant(utc, profile.lat, profile.lon);
+    c.mc        = computeMC(utc, profile.lon);
+    return c;
+  }
+
+  function renderSynastryForm() {
+    drawerStatus.textContent = 'ENTER PARTNER BIRTH DETAILS';
+    drawerBody.innerHTML = `
+      <div class="syn-form">
+        <p class="syn-form__intro">For the comparison I need the other person's birth.</p>
+        <label class="syn-form__field">
+          <span class="mono mono--small">NAME · OPTIONAL</span>
+          <input type="text" name="synName" placeholder="Their name" />
+        </label>
+        <label class="syn-form__field">
+          <span class="mono mono--small">DATE OF BIRTH</span>
+          <input type="date" name="synDate" />
+        </label>
+        <label class="syn-form__field">
+          <span class="mono mono--small">TIME OF BIRTH</span>
+          <input type="time" name="synTime" value="12:00" />
+        </label>
+        <label class="syn-form__field">
+          <span class="mono mono--small">CITY OF BIRTH</span>
+          <input type="text" name="synCity" placeholder="London, United Kingdom" />
+        </label>
+        <button class="btn btn--solid" type="button" data-action="syn-compute">Compute synastry</button>
+        <p class="syn-form__note mono mono--small">YOUR OWN PROFILE MUST BE SAVED FIRST.</p>
+      </div>
+    `;
+    const btn = drawerBody.querySelector('[data-action="syn-compute"]');
+    btn.addEventListener('click', async () => {
+      const f = drawerBody.querySelector('.syn-form');
+      const name = f.querySelector('[name="synName"]').value.trim();
+      const date = f.querySelector('[name="synDate"]').value;
+      const time = f.querySelector('[name="synTime"]').value;
+      const city = f.querySelector('[name="synCity"]').value.trim();
+      if (!date || !time || !city) {
+        drawerStatus.textContent = 'DATE, TIME, AND CITY REQUIRED';
+        return;
+      }
+      const own = getNatalChart();
+      if (!own) {
+        drawerStatus.textContent = 'SAVE YOUR OWN PROFILE FIRST';
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = 'Geocoding…';
+      drawerStatus.textContent = 'GEOCODING PARTNER CITY …';
+      let loc;
+      try { loc = await geocodeCity(city); }
+      catch (e) {
+        drawerStatus.textContent = `COULD NOT FIND CITY · ${(e.message || '').toUpperCase()}`;
+        btn.disabled = false; btn.textContent = 'Compute synastry';
+        return;
+      }
+      synastryPartner = buildPartnerChart({
+        name, birthDate: date, birthTime: time,
+        cityName: loc.name, lat: loc.lat, lon: loc.lon, tz: loc.tz,
+      });
+      renderSynastryReading();
+    });
+  }
+
+  function renderSynastryReading() {
+    const own = getNatalChart();
+    if (!own) {
+      drawerBody.innerHTML = `<p style="font-family:var(--serif);font-style:italic;color:var(--cream-dim)">Save your own birth profile first to compute synastry.</p>`;
+      return;
+    }
+    if (!synastryPartner) { renderSynastryForm(); return; }
+
+    drawerStatus.innerHTML = `<span class="dot" style="background:var(--rose);box-shadow:0 0 0 4px rgba(228,135,164,0.18)"></span>&nbsp;LIVE · CHART vs CHART`;
+
+    const aspects = computeSynastryAspects(own, synastryPartner);
+    const cat = categorizeSynastry(aspects);
+    const score = synastryScore(aspects);
+    const verdict = synastryVerdict(score);
+
+    const p = synastryPartner.profile;
+    const partnerName = p.name || 'Anonymous';
+    const partnerDate = p.birthDate || '';
+    const partnerCity = p.cityName || '';
+
+    drawerBody.innerHTML = `
+      <p class="syn-meta mono mono--small">
+        PARTNER · ${partnerName.toUpperCase()} · ${partnerDate} · ${partnerCity.toUpperCase()}
+      </p>
+      <h4>Chemistry</h4>
+      <p class="syn-cat">${describeAspects(cat.chemistry)    || 'No tight chemistry aspects within canonical orbs.'}</p>
+      <h4>Communication</h4>
+      <p class="syn-cat">${describeAspects(cat.communication) || 'No tight communication aspects.'}</p>
+      <h4>Emotional bond</h4>
+      <p class="syn-cat">${describeAspects(cat.bond)          || 'No tight emotional-bond aspects.'}</p>
+      <h4>Friction</h4>
+      <p class="syn-cat">${describeAspects(cat.friction)      || 'No major friction aspects under tight orbs.'}</p>
+      <div class="score">
+        <span class="score__label">COMPATIBILITY</span>
+        <span class="score__value">${score.toFixed(1)} / 10</span>
+        <span class="score__verdict">${verdict}</span>
+      </div>
+    `;
+  }
+
+
   // drawer controller
   const drawer       = document.getElementById('drawer');
   const drawerGlyph  = document.getElementById('drawerGlyph');
@@ -2766,40 +2960,15 @@
 
     // synastry — structured sections + score
     if (o.structured) {
-      drawerStatus.textContent = 'SAMPLE READING · LIVE API IN SPEC §5';
       drawerRegen.hidden = false;
       drawerAction.hidden = true;
-      drawerRegen.textContent = '↻ NEW READING';
+      drawerRegen.textContent = '↻ NEW PARTNER';
 
-      const v = o.variants[currentVariantIdx % o.variants.length];
-      const labels = { chemistry: 'Chemistry', communication: 'Communication', bond: 'Emotional bond', friction: 'Friction' };
-
-      const sections = ['chemistry', 'communication', 'bond', 'friction'];
-      const allParas = [];
-      sections.forEach(k => allParas.push({ heading: labels[k], text: v[k] }));
-
-      // render headings + stream paragraphs as we go
-      sections.forEach(k => {
-        const h = document.createElement('h4');
-        h.textContent = labels[k];
-        drawerBody.appendChild(h);
-        const p = document.createElement('p');
-        p.dataset.full = v[k];
-        drawerBody.appendChild(p);
-      });
-
-      // score block
-      const score = document.createElement('div');
-      score.className = 'score';
-      score.innerHTML = `
-        <span class="score__label">COMPATIBILITY</span>
-        <span class="score__value">${v.score}</span>
-        <span class="score__verdict">${v.verdict}</span>
-      `;
-      drawerBody.appendChild(score);
-
-      // stream into the existing <p> nodes one at a time
-      streamSequential(drawerBody.querySelectorAll('p[data-full]'));
+      if (!synastryPartner) {
+        renderSynastryForm();
+      } else {
+        renderSynastryReading();
+      }
       return;
     }
 
@@ -2872,8 +3041,10 @@
   drawerRegen.addEventListener('click', () => {
     const o = ORACLES[currentOracle];
     if (!o) return;
-    if (o.regional) {
-      // cycle to next region
+    if (o.structured) {
+      // synastry: clear the partner so the form re-renders
+      synastryPartner = null;
+    } else if (o.regional) {
       const order = ['europe', 'americas', 'asia', 'oceania', 'africa'];
       currentRegion = order[(order.indexOf(currentRegion) + 1) % order.length];
     } else if (o.variants) {
@@ -2895,8 +3066,7 @@
       const out = drawerBody.querySelector(':scope > div:last-child');
       if (out) out.innerHTML = o.regions[currentRegion].map(p => `<p>${p}</p>`).join('');
     } else if (o.structured) {
-      cancelStream();
-      drawerBody.querySelectorAll('p[data-full]').forEach(p => { p.innerHTML = p.dataset.full; });
+      // for synastry, fast-forward is a no-op (no streaming animation)
     } else {
       const v = o.variants[currentVariantIdx % o.variants.length];
       fastForward(drawerBody, v);

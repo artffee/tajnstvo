@@ -1900,6 +1900,53 @@ section {
   border-color: var(--cyan);
 }
 
+/* synastry inside drawer */
+.syn-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.syn-form__intro {
+  margin: 0 0 4px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--cream);
+}
+.syn-form__field { display: flex; flex-direction: column; gap: 6px; }
+.syn-form__field span { color: var(--warm); }
+.syn-form__field input {
+  font-family: var(--display);
+  font-size: 14px;
+  background: rgba(8, 10, 16, 0.55);
+  color: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 12px 12px;
+  outline: none;
+  transition: border-color 0.18s;
+}
+.syn-form__field input:focus { border-color: var(--rose); }
+.syn-form__note { color: var(--warm); margin: 6px 0 0; letter-spacing: 0.2em; }
+
+.syn-meta {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  background: rgba(228, 135, 164, 0.08);
+  border-left: 2px solid var(--rose);
+  border-radius: var(--radius-sm);
+  color: var(--cream-dim);
+  letter-spacing: 0.16em;
+  font-size: 10.5px;
+}
+.syn-cat {
+  margin: 0 0 16px;
+  font-style: italic;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--cream);
+}
+
 .drawer__foot {
   display: flex;
   justify-content: space-between;
