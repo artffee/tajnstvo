@@ -1238,6 +1238,204 @@ section {
 }
 
 
+/* frequency reader -------------------------------------------------- */
+
+.reader__hero {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(28px, 4vw, 44px);
+  color: var(--cream);
+  margin: 0 0 36px;
+  letter-spacing: -0.01em;
+}
+
+.reader__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+@media (max-width: 900px) { .reader__grid { grid-template-columns: 1fr; } }
+
+.reader-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 28px;
+  background: linear-gradient(180deg, rgba(20, 23, 31, 0.85) 0%, rgba(13, 16, 24, 0.82) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  transition: border-color 0.25s, box-shadow 0.32s;
+  min-height: 360px;
+}
+.reader-card.is-running {
+  border-color: rgba(255, 140, 66, 0.5);
+  box-shadow: 0 0 0 1px rgba(255, 140, 66, 0.25);
+}
+.reader-card.is-done {
+  border-color: rgba(77, 214, 200, 0.5);
+}
+.reader-card.is-skipped {
+  opacity: 0.5;
+}
+
+.reader-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.reader-card__step { color: var(--warm); }
+.reader-card__icon {
+  color: var(--amber);
+  display: inline-flex;
+}
+.reader-card[data-reader="voice"] .reader-card__icon { color: var(--cyan); }
+.reader-card.is-running .reader-card__icon {
+  animation: readerPulse 1.6s ease-in-out infinite;
+}
+@keyframes readerPulse {
+  0%, 100% { transform: scale(1);    opacity: 1;   }
+  50%      { transform: scale(1.18); opacity: 0.7; }
+}
+
+.reader-card__title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--cream);
+}
+
+.reader-card__desc {
+  margin: 0;
+  color: var(--cream-dim);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.reader-card__quote {
+  margin: 6px 0;
+  padding: 14px 16px;
+  background: rgba(8, 10, 16, 0.5);
+  border-left: 2px solid var(--cyan);
+  border-radius: 4px;
+  color: var(--cream);
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.reader-card__viz {
+  width: 100%;
+  height: 60px;
+  margin-top: 4px;
+  display: block;
+  border-radius: 4px;
+  background: rgba(8, 10, 16, 0.55);
+}
+
+.reader-card__status {
+  color: var(--warm);
+  letter-spacing: 0.16em;
+  min-height: 14px;
+}
+
+.reader-card__result {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.reader-card__big {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 42px;
+  line-height: 1;
+  background: linear-gradient(180deg, var(--cream) 0%, var(--amber-soft) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.reader-card[data-reader="voice"] .reader-card__big {
+  background: linear-gradient(180deg, var(--cream) 0%, var(--cyan) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.reader-card__unit {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--warm);
+}
+
+.reader-card__actions {
+  margin-top: auto;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.reader__output {
+  margin-top: 40px;
+  padding: 36px 32px;
+  background:
+    radial-gradient(70% 80% at 50% 0%, rgba(255, 140, 66, 0.10), transparent 70%),
+    linear-gradient(180deg, rgba(20, 23, 31, 0.9) 0%, rgba(13, 16, 24, 0.85) 100%);
+  border: 1px solid rgba(255, 140, 66, 0.35);
+  border-radius: 14px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.reader__output-eyebrow {
+  margin: 0;
+  color: var(--amber);
+  letter-spacing: 0.28em;
+}
+.reader__output-num {
+  margin: 14px 0 4px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(72px, 11vw, 124px);
+  line-height: 1;
+  background: linear-gradient(180deg, var(--cream) 0%, var(--amber-soft) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.reader__output-name {
+  margin: 0 0 14px;
+  font-family: var(--serif);
+  font-size: 22px;
+  color: var(--cream);
+  letter-spacing: 0.04em;
+}
+.reader__output-desc {
+  margin: 0 auto 14px;
+  max-width: 60ch;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--cream-dim);
+  line-height: 1.6;
+}
+.reader__output-meta {
+  margin: 0;
+  color: var(--warm);
+  letter-spacing: 0.22em;
+}
+
+.reader__privacy {
+  margin-top: 30px;
+  color: var(--warm);
+  letter-spacing: 0.22em;
+  text-align: center;
+  opacity: 0.7;
+}
+
+
 /* spec -------------------------------------------------------------- */
 
 .spec__grid {

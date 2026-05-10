@@ -13,6 +13,7 @@
 <script src="starmap.js" defer></script>
 <script src="soulreport-data.js" defer></script>
 <script src="frequencies.js" defer></script>
+<script src="frequency-reader.js" defer></script>
 </head>
 <body>
 
@@ -502,10 +503,91 @@
   </section>
 
 
+  <!-- FREQUENCY READER -->
+  <section class="reader" id="reader">
+    <div class="section__head">
+      <span class="section__num">§ 08</span>
+      <h2 class="section__title">Frequency Reader</h2>
+      <p class="section__sub">Body and voice are the two channels through which you broadcast your state. The reader samples each privately, in this browser, and never uploads anything.</p>
+    </div>
+
+    <p class="reader__hero">You are a frequency.</p>
+
+    <div class="reader__grid">
+
+      <!-- BODY -->
+      <article class="reader-card" data-reader="body">
+        <header class="reader-card__head">
+          <span class="reader-card__step mono mono--small">STEP 1 / BODY</span>
+          <span class="reader-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.4">
+              <path d="M12 21s-7-4.35-7-10a4 4 0 0 1 7-2.65A4 4 0 0 1 19 11c0 5.65-7 10-7 10z"/>
+            </svg>
+          </span>
+        </header>
+        <h3 class="reader-card__title">Body Reading</h3>
+        <p class="reader-card__desc">Place your fingertip fully over the back camera lens and hold still for fifteen seconds. The reader will detect your pulse from the slight pink-to-red drift in the image.</p>
+
+        <video class="reader-card__video" hidden playsinline muted></video>
+        <canvas class="reader-card__work" width="240" height="180" hidden></canvas>
+        <canvas class="reader-card__viz"  width="240" height="60"></canvas>
+
+        <p class="reader-card__status mono mono--small">15 seconds  ·  finger on lens</p>
+        <div class="reader-card__result" hidden></div>
+
+        <footer class="reader-card__actions">
+          <button class="btn btn--solid" type="button" data-action="begin">Begin body reading</button>
+          <button class="btn btn--ghost" type="button" data-action="skip">Skip</button>
+        </footer>
+      </article>
+
+      <!-- VOICE -->
+      <article class="reader-card" data-reader="voice">
+        <header class="reader-card__head">
+          <span class="reader-card__step mono mono--small">STEP 2 / VOICE</span>
+          <span class="reader-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.4">
+              <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3z"/>
+              <path d="M19 11a7 7 0 0 1-14 0M12 18v3"/>
+            </svg>
+          </span>
+        </header>
+        <h3 class="reader-card__title">Voice Reading</h3>
+        <p class="reader-card__desc">Hold the device near your face and read the line below aloud — calmly, at your natural volume — for ten seconds.</p>
+
+        <blockquote class="reader-card__quote">
+          <em>I am here. I am listening to the part of me that already knows.</em>
+        </blockquote>
+
+        <canvas class="reader-card__viz" width="240" height="60"></canvas>
+
+        <p class="reader-card__status mono mono--small">10 seconds  ·  natural voice</p>
+        <div class="reader-card__result" hidden></div>
+
+        <footer class="reader-card__actions">
+          <button class="btn btn--solid" type="button" data-action="begin">Begin voice reading</button>
+          <button class="btn btn--ghost" type="button" data-action="skip">Skip</button>
+        </footer>
+      </article>
+
+    </div>
+
+    <div class="reader__output" hidden>
+      <p class="reader__output-eyebrow mono mono--small">YOUR FREQUENCY</p>
+      <p class="reader__output-num"></p>
+      <p class="reader__output-name"></p>
+      <p class="reader__output-desc"></p>
+      <p class="reader__output-meta mono mono--small"></p>
+    </div>
+
+    <p class="reader__privacy mono mono--small">PRIVACY · CAMERA AND MICROPHONE STREAMS ARE RELEASED THE MOMENT EACH READING ENDS. NOTHING LEAVES YOUR BROWSER.</p>
+  </section>
+
+
   <!-- SPEC -->
   <section class="spec" id="spec">
     <div class="section__head">
-      <span class="section__num">§ 08</span>
+      <span class="section__num">§ 09</span>
       <h2 class="section__title">Specification</h2>
       <p class="section__sub">The architecture, in one passage.</p>
     </div>
