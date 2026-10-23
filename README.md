@@ -25,7 +25,7 @@ The signed receipt cookie supports this browser only, retaining up to three sess
 
 ## Content and privacy
 
-The main interface and short preview are available in English and Bulgarian; the full PDFs and most original Explore tools are English. The original approximate astronomical algorithms are retained. Geographic time-zone lookup uses tz-lookup and civil time conversion uses the runtime's IANA history, including half-hour offsets and ambiguous/nonexistent local times. Historical border changes are not fully modeled.
+The main interface and short preview are available in English and Bulgarian; the written PDFs now have English and Bulgarian editions; the Star Map and most original Explore tools are English. The original approximate astronomical algorithms are retained. Geographic time-zone lookup uses tz-lookup and civil time conversion uses the runtime's IANA history, including half-hour offsets and ambiguous/nonexistent local times. Historical border changes are not fully modeled.
 
 Names and birth profiles stay in the tab. Optional advanced Anthropic access is opt-in, stored in sessionStorage, and sends chart context and entered ritual text directly to Anthropic. The 45-day companion still stores its snapshot/progress locally. Privacy, Terms, Refunds and Contact pages disclose this behavior. No support address is fabricated. No analytics tag is included.
 
@@ -40,3 +40,11 @@ After a free reading, My Sky creates a 1080 × 1350 PNG locally in midnight or p
 `/daily` provides a deterministic daily reflection, action and journal question, an optional Sun-sign lens using this tab’s profile, a 60-second timer, and local completion history capped at 31 entries. Its general edition works without birth data. The date follows the visitor’s local calendar; astronomical positions use that date at 12:00 UTC. New content cycles through seven authored themes, with four element-based lenses. This is not AI-generated or a predictive forecast.
 
 `/folklore` introduces Martenitsa, the Surova feast in Pernik and Nestinarstvo in Bulgari. The page links to UNESCO heritage records and distinguishes the original stories from Tajnstvo’s modern reflection prompts and decorative SVG drawings. Both rooms and card controls support English and Bulgarian. No external image/font service or new backend is required.
+
+## Personal rooms and Bulgarian reports
+
+`/relationship` compares a saved primary birth chart with a second profile held only in page memory. It shows up to five close aspects among Sun, Moon, Mercury, Venus and Mars, with bilingual conversation prompts and no compatibility score. If either time is unknown, comparisons involving that person’s Moon are omitted. Ascendant/house compatibility is not inferred.
+
+`/journal` stores up to 100 entries locally without encryption. It supports edit, last-delete undo during the visit, JSON backup export, and validated import that preserves existing entries. Users are told about shared-browser access and clearing browser data. No account or server copy exists.
+
+`report-bg.js` is an authored Bulgarian edition based on the same chart calculations, rather than a literal translation of every English paragraph. It covers placements, Big Three, planets, nodes, numerology, houses, aspects, relationships/work/resources, chart wheel, approximate planetary map and generation-day transits. Cyrillic names do not produce misleading Latin-only name numerology. `/sample-bg.pdf` uses an explicitly labeled fictional profile. The selected written-report language persists across checkout and is used by verified personal downloads. The Star Map remains English. Purchases are still disabled until the existing payment activation requirements are met.

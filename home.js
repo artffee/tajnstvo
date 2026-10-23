@@ -96,12 +96,15 @@
     checkout.textContent=C.status.paymentsReady?U.choose('Secure Stripe checkout · one-time purchase · 7-day refund','Сигурно плащане чрез Stripe · еднократна покупка · 7-дневен срок за възстановяване'):U.choose('PDF purchases are being prepared. Your personal preview and all free tools are available.','Подготвяме покупките на PDF. Личният преглед и всички безплатни инструменти са достъпни.');
     document.querySelectorAll('[data-product]').forEach(b=>{b.disabled=busy||!C.status.paymentsReady;b.textContent=C.has(b.dataset.product)?U.choose('Download again','Изтегли отново'):C.status.paymentsReady?U.choose('Continue to checkout →','Продължи към плащане →'):U.choose('Purchases opening soon','Покупките ще бъдат достъпни скоро');});
   }
+  const reportLanguage=document.querySelector('#reportLanguage');
+  try{reportLanguage.value=localStorage.getItem('tajnstvo:reportLanguage')||U.lang;}catch{reportLanguage.value=U.lang;}
+  reportLanguage.addEventListener('change',()=>{try{localStorage.setItem('tajnstvo:reportLanguage',reportLanguage.value);}catch{}});
   const loaded=new Map();
   function loadScript(src){if(loaded.has(src))return loaded.get(src);const p=new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error('PDF_LOAD_FAILED'));document.head.append(s);});loaded.set(src,p);p.catch(()=>loaded.delete(src));return p;}
   async function download(product){
     const verification=await C.verify();if(!C.has(product))throw new Error('PAYMENT_NOT_VERIFIED');
     await loadScript('/vendor/jspdf.js');await loadScript('/report.js');await loadScript('/starmap.js');
-    if(product==='report'||product==='bundle')await window.TajnstvoReport.generatePdfReport(chart,null);
+    if(product==='report'||product==='bundle'){if(reportLanguage.value==='bg'){await loadScript('/report-bg.js');await window.TajnstvoBulgarianReport.generate(chart);}else await window.TajnstvoReport.generatePdfReport(chart,null);}
     if(product==='starmap'||product==='bundle')await window.tajnstvoStarMap(chart);
     message('Your PDF is ready. Keep this tab open to download it again.','PDF файлът е готов. Остави раздела отворен за повторно изтегляне.');
   }
