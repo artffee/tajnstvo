@@ -70,7 +70,7 @@
     <div class="topbar__meta">
       <button type="button" class="apikey-trigger" id="apiKeyTrigger" aria-expanded="false" aria-controls="apiKeyPop" title="Activate live oracle readings">
         <span class="dot" id="apiKeyDot"></span>
-        <span class="mono mono--small" id="apiKeyStatus">SAMPLE MODE</span>
+        <span class="mono mono--small" id="apiKeyStatus">AI READING · OFF</span>
       </button>
       <div class="apikey-pop" id="apiKeyPop" role="dialog" aria-label="Anthropic API key" hidden>
         <header class="apikey-pop__head">
@@ -94,10 +94,12 @@
   <section class="hero" id="hero">
     <div class="hero__layout">
       <div class="hero__copy">
-        <div class="eyebrow"><span class="bar"></span>TAJNSTVO · CELESTIAL ATLAS</div>
-        <h1 class="hero__headline">Your personalized <span class="hero__em">soul report.</span></h1>
+        <div class="eyebrow"><span class="bar"></span>CELESTIAL ATLAS · EST. MMXXVI</div>
+        <p class="hero__latin mono mono--small">QUOD SUPRA EST,<br>SICUT QUOD INFRA</p>
+        <p class="hero__brand">Tajnstvo</p>
+        <h1 class="hero__headline">The Soul Report.<br><span class="hero__em">Cast from the sky at your birth.</span></h1>
         <p class="hero__sub">
-          A detailed written reading of your <strong>soul mission, karmic patterns, gifts, and shadows</strong> — drawn from your exact birth chart and numerology, delivered as an instant PDF in about two minutes.
+          Twenty pages of personalized reading — your <strong>soul mission, karmic patterns, gifts, shadows</strong>, and a chart wheel drawn from the exact sky at the hour you were born. Generated in two minutes by a Hellenistic-informed astronomical engine. Yours to keep.
         </p>
 
         <form class="hero__form" id="profileForm" novalidate>
@@ -138,24 +140,38 @@
             </label>
           </div>
 
-          <button type="submit" class="btn btn--solid btn--hero">Get your Soul Report · $15</button>
-          <p class="hero__secure mono mono--small">✦ SECURE STRIPE CHECKOUT · INSTANT PDF · NO ACCOUNT NEEDED</p>
+          <button type="submit" class="btn btn--solid btn--hero">▸ Generate my Soul Report · $15</button>
+          <p class="hero__secure mono mono--small">INSTANT PDF · STRIPE CHECKOUT · 7-DAY REFUND</p>
           <p class="profile__note mono mono--small" id="profileNote">Enter your birth details to begin.</p>
         </form>
 
-        <p class="hero__freepaid">
-          <strong>All the tools below are free to explore</strong> — chart wheel, transits, astrocartography, oracles, frequencies. The personalized written report is <strong>$15</strong>.
-        </p>
         <p class="hero__secondary mono mono--small">
           <a href="#" id="starMapBtn">★ Just the star map · $9</a>
-          <a href="#" id="bundleUnlock">Both for $15 →</a>
+          <a href="#" id="bundleUnlock">Both for $19 →</a>
         </p>
+        <p class="hero__freepaid mono mono--small">All eight instruments below are free to explore. The personalized written <strong>Soul Report</strong> is $15.</p>
       </div>
 
-      <aside class="hero__preview" aria-label="Sample report pages">
-        <img src="sample-4.png" alt="Sample page from the Tajnstvo soul report — numerology" class="hero__preview-img hero__preview-img--front" loading="eager" />
-        <img src="sample-2.png" alt="Sample page from the soul report — chart wheel" class="hero__preview-img hero__preview-img--back" loading="lazy" />
-        <span class="hero__preview-tag mono mono--small">YOUR REPORT · 7 PAGES · INSTANT PDF</span>
+      <aside class="hero__panel" aria-label="System summary">
+        <div class="panel">
+          <div class="panel__header"><span class="mono mono--small">SYS / 01</span><span class="mono mono--small">→</span></div>
+          <dl class="kv">
+            <div><dt>Status</dt><dd>Live · May 2026</dd></div>
+            <div><dt>Engine</dt><dd>Schlyter · ±1° / 1900–2100</dd></div>
+            <div><dt>Delivery</dt><dd>~90 seconds · PDF</dd></div>
+            <div><dt>Privacy</dt><dd>Computed in-browser</dd></div>
+          </dl>
+        </div>
+        <div class="panel panel--accent">
+          <div class="panel__header"><span class="mono mono--small">SKY / NOW</span><span class="mono mono--small" id="liveTime">--:--</span></div>
+          <ul class="ticker">
+            <li><span class="glyph">☉</span><span>Sun</span><span class="mono" data-sky="sun">— Tau 16°</span></li>
+            <li><span class="glyph">☾</span><span>Moon</span><span class="mono" data-sky="moon">— Lib 04°</span></li>
+            <li><span class="glyph">☿</span><span>Mercury</span><span class="mono" data-sky="mercury">— Tau 02°</span></li>
+            <li><span class="glyph">♀</span><span>Venus</span><span class="mono" data-sky="venus">— Ari 28°</span></li>
+            <li><span class="glyph">♂</span><span>Mars</span><span class="mono" data-sky="mars">— Leo 11°</span></li>
+          </ul>
+        </div>
       </aside>
     </div>
   </section>
@@ -163,23 +179,20 @@
 
   <!-- WHAT'S INSIDE -->
   <section class="inside" id="inside">
-    <div class="section__head">
-      <span class="section__num">§ 01</span>
-      <h2 class="section__title">What's inside</h2>
-      <p class="section__sub">Every report is computed live from your exact birth data — no two are alike.</p>
-    </div>
+    <p class="inside__eyebrow mono mono--small">§&nbsp;&nbsp;THE SOUL REPORT · WHAT'S INSIDE&nbsp;&nbsp;§</p>
 
     <div class="inside__grid">
-      <ul class="inside__list">
-        <li><span class="inside__k">Big Three</span><span class="inside__v">Sun, Moon &amp; Rising — your core identity, emotional world, and the face you show.</span></li>
-        <li><span class="inside__k">Soul Mission</span><span class="inside__v">Your North Node direction and Life Path number — where the soul is headed.</span></li>
-        <li><span class="inside__k">Numerology</span><span class="inside__v">Life Path, Expression, Soul Urge, Personality &amp; Birthday numbers, from name and date.</span></li>
-        <li><span class="inside__k">Karmic Patterns &amp; Shadows</span><span class="inside__v">Your greatest wounds — anchored in Saturn and the 12th house — and how to meet them.</span></li>
-        <li><span class="inside__k">Gifts &amp; Domains</span><span class="inside__v">Relationships, career, and finances, read through the houses and rulers.</span></li>
-        <li><span class="inside__k">Chart Wheel</span><span class="inside__v">A full natal wheel with whole-sign houses and aspect lines.</span></li>
-        <li><span class="inside__k">Astrocartography</span><span class="inside__v">Your planetary lines projected across the Earth.</span></li>
-        <li><span class="inside__k">Today's Transits</span><span class="inside__v">The current sky measured against your chart, the day you generate it.</span></li>
-      </ul>
+      <ol class="inside__list">
+        <li><span class="inside__n mono mono--small">01</span><span class="inside__k">Big Three</span><span class="inside__v">Sun, Moon, Rising — read together.</span></li>
+        <li><span class="inside__n mono mono--small">02</span><span class="inside__k">Life Path</span><span class="inside__v">Your numerological signature.</span></li>
+        <li><span class="inside__n mono mono--small">03</span><span class="inside__k">Soul Mission</span><span class="inside__v">North Node path &amp; purpose.</span></li>
+        <li><span class="inside__n mono mono--small">04</span><span class="inside__k">Greatest Wounds</span><span class="inside__v">Chiron, South Node, shadow themes.</span></li>
+        <li><span class="inside__n mono mono--small">05</span><span class="inside__k">Relationships</span><span class="inside__v">Venus / Mars / 7th house dynamics.</span></li>
+        <li><span class="inside__n mono mono--small">06</span><span class="inside__k">Career &amp; Money</span><span class="inside__v">10th &amp; 2nd house, MC line.</span></li>
+        <li><span class="inside__n mono mono--small">07</span><span class="inside__k">Chart Wheel</span><span class="inside__v">Rendered, ready to print.</span></li>
+        <li><span class="inside__n mono mono--small">08</span><span class="inside__k">Astrocartography</span><span class="inside__v">Your planetary lines across Earth.</span></li>
+        <li><span class="inside__n mono mono--small">09</span><span class="inside__k">Today's Transits</span><span class="inside__v">The sky moving across your chart.</span></li>
+      </ol>
 
       <div class="inside__previews">
         <img src="sample-3.png" alt="Soul report sample — Soul Mission and Big Three" class="inside__page" loading="lazy" />
@@ -189,8 +202,16 @@
     </div>
 
     <p class="inside__cta">
-      <a href="#hero" class="btn btn--solid">Get your Soul Report · $15</a>
+      <a href="/sample.pdf" target="_blank" rel="noopener" class="btn btn--ghost">See a sample report →</a>
+      <a href="#hero" class="btn btn--solid">Generate my Soul Report · $15</a>
     </p>
+  </section>
+
+
+  <!-- TRANSITION TO FREE TOOLS -->
+  <section class="transition" id="instruments">
+    <p class="transition__lead">The report is yours to keep. Below: eight free instruments to live alongside it — astrocartography, transit tracking, voice meditation, and a Bulgarian fire ritual.</p>
+    <p class="transition__arrow mono mono--small">↓&nbsp;&nbsp;THE EIGHT INSTRUMENTS</p>
   </section>
 
 
@@ -594,7 +615,7 @@
       </p>
       <button class="btn btn--solid btn--lg" id="programBegin">Begin the 45 days</button>
       <p class="program__note mono mono--small" id="programNote">
-        SAVE YOUR BIRTH PROFILE ABOVE FIRST · GENERATE A REPORT TO CACHE THE CHART
+        USES THE SAME BIRTH DETAILS AS YOUR REPORT · FILL THE FORM AT THE TOP, THEN BEGIN
       </p>
     </div>
 
@@ -639,6 +660,8 @@
         <p>Instant. You enter your details, pay through Stripe, and the PDF generates and downloads in your browser within a minute or two. There is no human in the loop and no waiting period.</p></details>
       <details class="faq__item"><summary>How accurate is the astrology?</summary>
         <p>Planetary positions are computed with Paul Schlyter's simplified formulas — accurate to roughly ±1° across the years 1900–2100, the same order of precision used by professional chart software. Houses use the whole-sign system.</p></details>
+      <details class="faq__item"><summary>Is this written by a human astrologer, or generated?</summary>
+        <p>Generated — there is no astrologer reading your chart by hand. The planetary math is real astronomy, computed from your exact birth data; the words are then drawn from a written interpretive system keyed to your placements, and optionally a live AI reading if you supply your own API key. It's consistent, instant, and private. It isn't a replacement for sitting with a human astrologer, if that's what you're after.</p></details>
       <details class="faq__item"><summary>Do I need my exact birth time?</summary>
         <p>It helps a great deal. Your Rising sign and house placements depend on the time and place. If you don't know it, the planetary signs and the numerology are still exact — only the Rising sign and houses become approximate.</p></details>
       <details class="faq__item"><summary>Is my data private?</summary>
@@ -646,7 +669,7 @@
       <details class="faq__item"><summary>What's free and what's paid?</summary>
         <p>Every interactive tool on this page is free to explore — the chart wheel, transits, astrocartography, the four oracles, and the healing frequencies. Only the downloadable written <strong>Soul Report ($15)</strong> and the <strong>Star Map poster ($9)</strong> are paid.</p></details>
       <details class="faq__item"><summary>Can I get a refund?</summary>
-        <p>Because each report is an instant digital download generated uniquely for you, sales are final. But if anything fails to generate correctly, write to us and we will make it right.</p></details>
+        <p>Yes — if the report isn't right for you, write to us within <strong>7 days</strong> of purchase and we'll refund you, no questions asked. Each report is generated uniquely for you, but your satisfaction comes first.</p></details>
       <details class="faq__item"><summary>What format is the report?</summary>
         <p>A print-ready A4 PDF you can keep, print, frame, or share. It opens on any device.</p></details>
     </div>
@@ -656,12 +679,12 @@
   <!-- FOUNDER -->
   <section class="founder" id="founder">
     <div class="founder__inner">
-      <p class="founder__eyebrow mono mono--small">WHO MADE THIS</p>
+      <p class="founder__eyebrow mono mono--small">HOW THIS IS MADE</p>
       <blockquote class="founder__quote">
-        <p>Tajnstvo — Old Church Slavonic for <em>the mystery</em> — began as an obsession with two traditions that rarely meet: the precise, ancient mathematics of Hellenistic astrology, and the folk divination practised in my family with molten lead. I built the astronomical engine from scratch so every chart is honest math rather than a lookup table, and wrote every interpretation by hand.</p>
-        <p>There is no call centre and no upsell funnel here — just one carefully made report, generated the moment you ask for it.</p>
+        <p>Tajnstvo — Old Church Slavonic for <em>the mystery</em> — began as one person's obsession with two traditions that rarely meet: the precise, ancient mathematics of Hellenistic astrology, and the folk divination once practised with molten lead. The astronomical engine was built from scratch, so every chart is honest math computed live in your browser — your planets at their real positions, not a lookup table.</p>
+        <p>The readings are <strong>generated, not hand-read by an astrologer</strong>. Your chart is interpreted through a written system keyed to your exact placements — and, if you add your own API key, a live AI reading composed from the same data. No human sees your birth details; nothing is stored or sold. Just one carefully made report, cast the moment you ask for it.</p>
       </blockquote>
-      <p class="founder__sign mono mono--small">— THE MAKER OF TAJNSTVO</p>
+      <p class="founder__sign mono mono--small">— TAJNSTVO · CELESTIAL ATLAS</p>
       <p class="founder__cta"><a href="#hero" class="btn btn--solid">Get your Soul Report · $15</a> <a href="/spec" class="founder__speclink mono mono--small">Read the technical spec →</a></p>
     </div>
   </section>

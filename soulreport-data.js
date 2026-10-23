@@ -194,5 +194,117 @@
     personality: 'From the consonants — the version of you that others meet first',
   };
 
-  window.tajnstvoSoulData = { SIGN_TEXTS, LIFE_PATH, NORTH_NODE, PHASES, NUMBER_MEANINGS, NUMBER_POSITIONS };
+  // Per-planet archetypes — the heart of the deep-dive pages.
+  // governs = caps subtitle; body = 2-3 sentence essence; shadow = one shadow line.
+  const PLANET_ARCHETYPES = {
+    sun: {
+      name: 'The Sun', glyph: '☉', governs: 'IDENTITY · VITALITY · WILL',
+      body: "The Sun is the core of the chart — the conscious self, the will to be, the thing that says 'I am' before anything qualifies it. Where the Sun sits is where you are most yourself, most alive, and most asked to shine on purpose.",
+      shadow: 'Pride, or building a life around being seen rather than being true.',
+    },
+    moon: {
+      name: 'The Moon', glyph: '☾', governs: 'EMOTION · INSTINCT · HOME',
+      body: 'The Moon is your inner weather — the part of you that feels before it thinks, that needs, soothes, and remembers. It governs what makes you feel safe and how you care for yourself and the people you love.',
+      shadow: 'Retreating into old comfort, or mistaking the familiar for the safe.',
+    },
+    mercury: {
+      name: 'Mercury', glyph: '☿', governs: 'MIND · LANGUAGE · EXCHANGE',
+      body: 'Mercury is how you think, speak, learn, and connect the dots. It rules the voice, the hands, and the daily traffic of ideas and information that runs through you.',
+      shadow: 'Overthinking, or talking around a truth instead of through it.',
+    },
+    venus: {
+      name: 'Venus', glyph: '♀', governs: 'LOVE · BEAUTY · VALUE',
+      body: 'Venus is what you find beautiful and how you draw it near — love, pleasure, art, and the sense of what you are worth. It governs how you relate and what you reach for to feel full.',
+      shadow: 'Pleasing to be loved, or confusing being wanted with being valued.',
+    },
+    mars: {
+      name: 'Mars', glyph: '♂', governs: 'DRIVE · DESIRE · ACTION',
+      body: 'Mars is your engine — how you assert, pursue, fight, and want. It governs anger, courage, and the way you move toward whatever you decide is yours.',
+      shadow: 'Force where patience was needed, or anger turned inward as drift.',
+    },
+    jupiter: {
+      name: 'Jupiter', glyph: '♃', governs: 'GROWTH · FAITH · ABUNDANCE',
+      body: 'Jupiter is where life wants to expand you — through meaning, luck, generosity, and the belief that more is possible. It shows where you grow and where the world tends to open its doors.',
+      shadow: 'Excess, over-promising, or faith untethered from the work.',
+    },
+    saturn: {
+      name: 'Saturn', glyph: '♄', governs: 'STRUCTURE · TIME · MASTERY',
+      body: 'Saturn is the teacher — limitation, discipline, and the slow earning of authority. It marks where life asks for patience, and where mastery, once built, becomes unshakeable.',
+      shadow: 'Fear dressed as realism, or hardness where tenderness was the lesson.',
+    },
+    uranus: {
+      name: 'Uranus', glyph: '♅', governs: 'FREEDOM · AWAKENING · DISRUPTION',
+      body: 'Uranus is the lightning — where you break pattern, individuate, and refuse to be told. A slow generational planet, but in your chart it marks where you are most original and least willing to conform.',
+      shadow: 'Rebellion for its own sake, or detachment that calls itself freedom.',
+    },
+    neptune: {
+      name: 'Neptune', glyph: '♆', governs: 'DREAM · SPIRIT · DISSOLUTION',
+      body: 'Neptune is the dissolving edge — imagination, compassion, and the longing for the infinite. A slow generational planet, but in your chart it marks where the boundaries thin and the sacred (or the illusory) leaks through.',
+      shadow: 'Escape, idealisation, or losing yourself in the fog.',
+    },
+  };
+
+  // Sign full names + element/modality (for composing planet-in-sign prose).
+  const SIGN_FULL = {
+    Ari:'Aries', Tau:'Taurus', Gem:'Gemini', Can:'Cancer', Leo:'Leo', Vir:'Virgo',
+    Lib:'Libra', Sco:'Scorpio', Sag:'Sagittarius', Cap:'Capricorn', Aqu:'Aquarius', Pis:'Pisces',
+  };
+  const SIGN_ELEMENT = {
+    Ari:'Fire', Leo:'Fire', Sag:'Fire', Tau:'Earth', Vir:'Earth', Cap:'Earth',
+    Gem:'Air', Lib:'Air', Aqu:'Air', Can:'Water', Sco:'Water', Pis:'Water',
+  };
+  const SIGN_MODALITY = {
+    Ari:'Cardinal', Can:'Cardinal', Lib:'Cardinal', Cap:'Cardinal',
+    Tau:'Fixed', Leo:'Fixed', Sco:'Fixed', Aqu:'Fixed',
+    Gem:'Mutable', Vir:'Mutable', Sag:'Mutable', Pis:'Mutable',
+  };
+  const ELEMENT_TONE = {
+    Fire:  'expression is immediate, instinctive, and warm',
+    Earth: 'expression is grounded, patient, and built to last',
+    Air:   'expression is mental, social, and moves through ideas',
+    Water: 'expression is feeling-led, intuitive, and runs deep',
+  };
+  const MODALITY_TONE = {
+    Cardinal: 'it initiates — starting what others wait to be sure of',
+    Fixed:    'it holds — sustaining and deepening once a course is set',
+    Mutable:  'it adapts — bending and translating as conditions shift',
+  };
+
+  // Whole-sign house life-domains.
+  const HOUSE_THEMES = {
+    1:  'the self, the body, and the way you meet the world',
+    2:  'money, possessions, and what you value and hold',
+    3:  'mind, siblings, communication, and the near environment',
+    4:  'home, roots, family, and the private interior',
+    5:  'creativity, romance, play, and what you make for joy',
+    6:  'work, health, routine, and daily service',
+    7:  'partnership, marriage, and the significant other',
+    8:  'intimacy, shared resources, and transformation',
+    9:  'meaning, travel, higher study, and the larger view',
+    10: 'career, reputation, and your public standing',
+    11: 'friends, networks, hopes, and the collective',
+    12: 'solitude, the unconscious, surrender, and what is hidden',
+  };
+
+  // Aspect interpretive lines (keyed to ASPECTS_DEFS names).
+  const ASPECT_MEANINGS = {
+    CONJ:    { label: 'conjunct',  line: 'two forces fused into one — they act together, for better and worse, and cannot be separated.' },
+    SEXTILE: { label: 'sextile',   line: 'an open door — ease that becomes a gift only when you choose to use it.' },
+    SQUARE:  { label: 'square',    line: 'a productive friction — these parts of you grow by being forced to work under tension.' },
+    TRINE:   { label: 'trine',     line: 'a natural flow — a talent so easy it can be taken for granted.' },
+    OPP:     { label: 'opposition',line: 'a pull between two poles — the work is balance, not the defeat of one side.' },
+  };
+
+  // Short essence used when a planet is named inside another section.
+  const PLANET_FUNCTION = {
+    sun: 'core will', moon: 'inner needs', mercury: 'thinking', venus: 'capacity to love',
+    mars: 'drive', jupiter: 'sense of possibility', saturn: 'discipline',
+    uranus: 'need for freedom', neptune: 'imagination',
+  };
+
+  window.tajnstvoSoulData = {
+    SIGN_TEXTS, LIFE_PATH, NORTH_NODE, PHASES, NUMBER_MEANINGS, NUMBER_POSITIONS,
+    PLANET_ARCHETYPES, SIGN_FULL, SIGN_ELEMENT, SIGN_MODALITY, ELEMENT_TONE,
+    MODALITY_TONE, HOUSE_THEMES, ASPECT_MEANINGS, PLANET_FUNCTION,
+  };
 })();
