@@ -242,12 +242,13 @@
 
 
   /* ---------- main: build the star map PDF ---------- */
-  function generateStarMap(chart) {
+  async function generateStarMap(chart) {
     if (!window.jspdf || !window.jspdf.jsPDF) {
       throw new Error('jsPDF not loaded');
     }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    if (window.TajnstvoReport) await window.TajnstvoReport.installUnicodeText(doc);
 
     const W = 210, H = 297;
 
@@ -392,7 +393,7 @@
 
     doc.setTextColor(ink[0], ink[1], ink[2]);
     doc.setFont('times', 'italic');
-    doc.setFontSize(40);
+    doc.setFontSize(Math.min(30, 570 / Math.max(19, (chart.profile.name || "Anonymous").length)));
     doc.text(chart.profile.name || 'Anonymous', W / 2, y, { align: 'center' });
     y += 14;
 

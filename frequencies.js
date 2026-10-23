@@ -10,11 +10,11 @@
 
   const FREQUENCIES = [
     { hz: 174, name: 'Foundation',     desc: 'rooting, ease, the body coming back to itself' },
-    { hz: 285, name: 'Restoration',    desc: 'tissue regeneration, repair, returning to wholeness' },
+    { hz: 285, name: 'Restoration',    desc: 'a gentle tone for a quiet moment' },
     { hz: 396, name: 'Liberation',     desc: 'release of fear, guilt, the weight of inherited shame' },
     { hz: 417, name: 'Transformation', desc: 'undoing of stuck situations, the willingness to change' },
     { hz: 432, name: 'Harmony',        desc: 'natural tuning, often called the frequency of the cosmos' },
-    { hz: 528, name: 'Love',           desc: 'cellular renewal, transformation, the famed DNA‑repair tone' },
+    { hz: 528, name: 'Love',           desc: 'a tone traditionally associated with love and reflection' },
     { hz: 639, name: 'Connection',     desc: 'harmony in relationships, the courage to remain in contact' },
     { hz: 741, name: 'Awakening',      desc: 'expression, intuition, the clearing of held untruth' },
     { hz: 852, name: 'Insight',        desc: 'return to spiritual order, the eye that sees through' },
