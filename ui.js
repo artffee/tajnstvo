@@ -14,6 +14,7 @@
   const menu=document.querySelector('#menuToggle'),nav=document.querySelector('#mainNav');
   menu?.addEventListener('click',()=>{const open=menu.getAttribute('aria-expanded')!=='true';menu.setAttribute('aria-expanded',String(open));nav.classList.toggle('is-open',open);});
   nav?.addEventListener('click',e=>{if(e.target.closest('a')){menu.setAttribute('aria-expanded','false');nav.classList.remove('is-open');}});
+  const enSigns=['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
   const bgSigns=['Овен','Телец','Близнаци','Рак','Лъв','Дева','Везни','Скорпион','Стрелец','Козирог','Водолей','Риби'];
   const bgLines=[
     'Смелостта да започваш е твой ресурс. Оставяй място и за търпение, и за чуждата гледна точка.',
@@ -29,7 +30,7 @@
     'Независимостта на мисълта носи нови възможности. Дай място на близостта наред със свободата.',
     'Въображението и съпричастността обогатяват опита. Ясните граници помагат на чувствителността да намери форма.'
   ];
-  function signName(short){const e=window.TajnstvoEngine;const i=e.SIGNS.indexOf(short);return lang==='bg'?bgSigns[i]:window.tajnstvoSoulData?.SIGN_FULL?.[short]||short;}
+  function signName(short){const e=window.TajnstvoEngine;const i=e.SIGNS.indexOf(short);return lang==='bg'?bgSigns[i]:window.tajnstvoSoulData?.SIGN_FULL?.[short]||enSigns[i]||short;}
   function readingParagraphs(chart){
     const E=window.TajnstvoEngine,D=window.tajnstvoSoulData;
     return [['sun','Sun','Слънце'],['moon','Moon','Луна'],['rising','Rising','Асцендент']].filter(([key])=>key!=='rising'||!chart.profile.timeUnknown).map(([key,en,bg])=>{
