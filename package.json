@@ -1,0 +1,15 @@
+{
+  "name": "tajnstvo",
+  "private": true,
+  "version": "1.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "stripe": "23.0.1",
+    "@photostructure/tz-lookup": "11.7.0"
+  }
+}

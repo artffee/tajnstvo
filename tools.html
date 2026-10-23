@@ -1,144 +1,116 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
 <title>Frequency Reader — Tajnstvo</title>
-<meta name="description" content="Measure your live energetic frequency from a camera pulse reading and your voice — entirely in your browser." />
-<link rel="canonical" href="https://tajnstvoto.com/tools" />
-<meta name="robots" content="index, follow" />
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css" />
-<script src="frequency-reader.js" defer></script>
-</head>
+<meta content="An experimental audio and camera visualizer. For reflection and entertainment, not health or spiritual measurement." name="description"/>
+<link href="https://tajnstvoto.com/tools" rel="canonical"/>
+<meta content="index, follow" name="robots"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@300;400;500&amp;family=Instrument+Serif:ital@0;1&amp;display=swap" rel="stylesheet"/>
+<link href="styles.css" rel="stylesheet"/>
+<script defer="" src="frequency-reader.js"></script>
+<link href="/site.css" rel="stylesheet"/></head>
 <body>
-
-<canvas id="starfield" aria-hidden="true"></canvas>
-
+<canvas aria-hidden="true" id="starfield"></canvas>
 <header class="topbar">
-  <div class="topbar__inner">
-    <a class="brand" href="/">
-      <span class="brand__glyph" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1">
-          <circle cx="12" cy="12" r="10.5"/><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.5"/>
-          <line x1="12" y1="0.5" x2="12" y2="23.5"/><line x1="0.5" y1="12" x2="23.5" y2="12"/>
-        </svg>
-      </span>
-      <span class="brand__name">TAJNSTVO</span>
-    </a>
-    <nav class="topnav">
-      <a href="/#inside">What's inside</a>
-      <a href="/#faq">FAQ</a>
-      <a href="/">Home</a>
-    </nav>
-    <div class="topbar__meta">
-      <a href="/#hero" class="mono mono--small" style="color:var(--amber)">GET REPORT · $15 →</a>
-    </div>
-  </div>
+<div class="topbar__inner">
+<a class="brand" href="/">
+<span aria-hidden="true" class="brand__glyph">
+<svg fill="none" height="22" stroke="currentColor" stroke-width="1" viewbox="0 0 24 24" width="22">
+<circle cx="12" cy="12" r="10.5"></circle><circle cx="12" cy="12" r="6.5"></circle><circle cx="12" cy="12" r="2.5"></circle>
+<line x1="12" x2="12" y1="0.5" y2="23.5"></line><line x1="0.5" x2="23.5" y1="12" y2="12"></line>
+</svg>
+</span>
+<span class="brand__name">TAJNSTVO</span>
+</a>
+<nav class="topnav">
+<a href="/#inside">What's inside</a>
+<a href="/#faq">FAQ</a>
+<a href="/">Home</a>
+</nav>
+<div class="topbar__meta">
+<a class="mono mono--small" href="/#reading" style="color:var(--amber)">FREE READING</a>
+</div>
+</div>
 </header>
-
 <main id="top">
-  <section class="reader" id="reader">
-    <div class="section__head">
-      <span class="section__num">DEEPER</span>
-      <h2 class="section__title">Frequency Reader</h2>
-      <p class="section__sub">Body and voice are the two channels through which you broadcast your state. The reader samples each privately, in this browser, and never uploads anything.</p>
-    </div>
-
-    <p class="reader__hero">You are a frequency.</p>
-
-    <div class="reader__grid">
-
-      <article class="reader-card" data-reader="body">
-        <header class="reader-card__head">
-          <span class="reader-card__step mono mono--small">STEP 1 / BODY</span>
-          <span class="reader-card__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.4">
-              <path d="M12 21s-7-4.35-7-10a4 4 0 0 1 7-2.65A4 4 0 0 1 19 11c0 5.65-7 10-7 10z"/>
-            </svg>
-          </span>
-        </header>
-        <h3 class="reader-card__title">Body Reading</h3>
-        <p class="reader-card__desc">Place your fingertip fully over the back camera lens and hold still for fifteen seconds. The reader will detect your pulse from the slight pink-to-red drift in the image.</p>
-
-        <video class="reader-card__video" hidden playsinline muted></video>
-        <canvas class="reader-card__work" width="240" height="180" hidden></canvas>
-        <canvas class="reader-card__viz"  width="240" height="60"></canvas>
-
-        <p class="reader-card__status mono mono--small">15 seconds  ·  finger on lens</p>
-        <div class="reader-card__result" hidden></div>
-
-        <footer class="reader-card__actions">
-          <button class="btn btn--solid" type="button" data-action="begin">Begin body reading</button>
-          <button class="btn btn--ghost" type="button" data-action="skip">Skip</button>
-        </footer>
-      </article>
-
-      <article class="reader-card" data-reader="voice">
-        <header class="reader-card__head">
-          <span class="reader-card__step mono mono--small">STEP 2 / VOICE</span>
-          <span class="reader-card__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.4">
-              <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3z"/>
-              <path d="M19 11a7 7 0 0 1-14 0M12 18v3"/>
-            </svg>
-          </span>
-        </header>
-        <h3 class="reader-card__title">Voice Reading</h3>
-        <p class="reader-card__desc">Hold the device near your face and read the line below aloud — calmly, at your natural volume — for ten seconds.</p>
-
-        <blockquote class="reader-card__quote">
-          <em>I am here. I am listening to the part of me that already knows.</em>
-        </blockquote>
-
-        <canvas class="reader-card__viz" width="240" height="60"></canvas>
-
-        <p class="reader-card__status mono mono--small">10 seconds  ·  natural voice</p>
-        <div class="reader-card__result" hidden></div>
-
-        <footer class="reader-card__actions">
-          <button class="btn btn--solid" type="button" data-action="begin">Begin voice reading</button>
-          <button class="btn btn--ghost" type="button" data-action="skip">Skip</button>
-        </footer>
-      </article>
-
-    </div>
-
-    <div class="reader__output" hidden>
-      <p class="reader__output-eyebrow mono mono--small">YOUR FREQUENCY</p>
-      <p class="reader__output-num"></p>
-      <p class="reader__output-name"></p>
-      <p class="reader__output-desc"></p>
-      <p class="reader__output-meta mono mono--small"></p>
-    </div>
-
-    <p class="reader__privacy mono mono--small">PRIVACY · CAMERA AND MICROPHONE STREAMS ARE RELEASED THE MOMENT EACH READING ENDS. NOTHING LEAVES YOUR BROWSER.</p>
-
-    <p class="inside__cta"><a href="/#hero" class="btn btn--solid">Get your Soul Report · $15</a></p>
-  </section>
-</main>
-
-<footer class="footer">
-  <div class="footer__inner">
-    <div>
-      <div class="brand brand--small"><span class="brand__name">TAJNSTVO</span></div>
-      <p class="footer__tag mono mono--small">CELESTIAL ATLAS</p>
-    </div>
-    <p class="footer__sig mono mono--small">QUOD SUPRA EST, SICUT QUOD INFRA · © MMXXVI</p>
-  </div>
+<section class="reader" id="reader">
+<div class="section__head">
+<span class="section__num">DEEPER</span>
+<h2 class="section__title">Frequency Reader</h2><p class="hero__sub">An experimental visualizer for reflection and entertainment. These estimates do not measure your health, emotions, or spiritual state.</p>
+<p class="section__sub">Body and voice are the two channels through which you broadcast your state. The reader samples each privately, in this browser, and never uploads anything.</p>
+</div>
+<p class="reader__hero">You are a frequency.</p>
+<div class="reader__grid">
+<article class="reader-card" data-reader="body">
+<header class="reader-card__head">
+<span class="reader-card__step mono mono--small">STEP 1 / BODY</span>
+<span aria-hidden="true" class="reader-card__icon">
+<svg fill="none" height="22" stroke="currentColor" stroke-width="1.4" viewbox="0 0 24 24" width="22">
+<path d="M12 21s-7-4.35-7-10a4 4 0 0 1 7-2.65A4 4 0 0 1 19 11c0 5.65-7 10-7 10z"></path>
+</svg>
+</span>
+</header>
+<h3 class="reader-card__title">Body Reading</h3>
+<p class="reader-card__desc">Place your fingertip fully over the back camera lens and hold still for fifteen seconds. The reader will detect your pulse from the slight pink-to-red drift in the image.</p>
+<video class="reader-card__video" hidden="" muted="" playsinline=""></video>
+<canvas class="reader-card__work" height="180" hidden="" width="240"></canvas>
+<canvas class="reader-card__viz" height="60" width="240"></canvas>
+<p class="reader-card__status mono mono--small">15 seconds  ·  finger on lens</p>
+<div class="reader-card__result" hidden=""></div>
+<footer class="reader-card__actions">
+<button class="btn btn--solid" data-action="begin" type="button">Begin body reading</button>
+<button class="btn btn--ghost" data-action="skip" type="button">Skip</button>
 </footer>
-
-<script>
-(function(){
-  const c=document.getElementById('starfield'); if(!c)return; const x=c.getContext('2d');
-  let stars=[],dpr=Math.min(devicePixelRatio||1,2);
-  function rs(){dpr=Math.min(devicePixelRatio||1,2);c.width=innerWidth*dpr;c.height=innerHeight*dpr;c.style.width=innerWidth+'px';c.style.height=innerHeight+'px';
-    stars=Array.from({length:Math.min(160,Math.floor(innerWidth*innerHeight/12000))},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:(Math.random()*1.1+0.2)*dpr,p:Math.random()*6.28,s:0.3+Math.random()*0.7}));}
-  function d(t){x.clearRect(0,0,c.width,c.height);const tm=t*0.001;for(const s of stars){const tw=0.55+0.45*Math.sin(tm*s.s+s.p);x.globalAlpha=tw;x.fillStyle='rgba(236,232,223,'+(0.5*tw+0.2)+')';x.beginPath();x.arc(s.x,s.y,s.r,0,6.28);x.fill();}x.globalAlpha=1;requestAnimationFrame(d);}
-  rs();requestAnimationFrame(d);addEventListener('resize',rs);
-})();
-</script>
+</article>
+<article class="reader-card" data-reader="voice">
+<header class="reader-card__head">
+<span class="reader-card__step mono mono--small">STEP 2 / VOICE</span>
+<span aria-hidden="true" class="reader-card__icon">
+<svg fill="none" height="22" stroke="currentColor" stroke-width="1.4" viewbox="0 0 24 24" width="22">
+<path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3z"></path>
+<path d="M19 11a7 7 0 0 1-14 0M12 18v3"></path>
+</svg>
+</span>
+</header>
+<h3 class="reader-card__title">Voice Reading</h3>
+<p class="reader-card__desc">Hold the device near your face and read the line below aloud — calmly, at your natural volume — for ten seconds.</p>
+<blockquote class="reader-card__quote">
+<em>I am here. I am listening to the part of me that already knows.</em>
+</blockquote>
+<canvas class="reader-card__viz" height="60" width="240"></canvas>
+<p class="reader-card__status mono mono--small">10 seconds  ·  natural voice</p>
+<div class="reader-card__result" hidden=""></div>
+<footer class="reader-card__actions">
+<button class="btn btn--solid" data-action="begin" type="button">Begin voice reading</button>
+<button class="btn btn--ghost" data-action="skip" type="button">Skip</button>
+</footer>
+</article>
+</div>
+<div class="reader__output" hidden="">
+<p class="reader__output-eyebrow mono mono--small">YOUR FREQUENCY</p>
+<p class="reader__output-num"></p>
+<p class="reader__output-name"></p>
+<p class="reader__output-desc"></p>
+<p class="reader__output-meta mono mono--small"></p>
+</div>
+<p class="reader__privacy mono mono--small">PRIVACY · CAMERA AND MICROPHONE STREAMS ARE RELEASED THE MOMENT EACH READING ENDS. NOTHING LEAVES YOUR BROWSER.</p>
+<p class="inside__cta"><a class="btn btn--solid" href="/#reading">FREE READING</a></p>
+</section>
+</main>
+<footer class="footer">
+<div class="footer__inner">
+<div>
+<div class="brand brand--small"><span class="brand__name">TAJNSTVO</span></div>
+<p class="footer__tag mono mono--small">CELESTIAL ATLAS</p>
+</div>
+<p class="footer__sig mono mono--small">QUOD SUPRA EST, SICUT QUOD INFRA · © MMXXVI</p>
+</div>
+<nav aria-label="Legal and support"><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/refunds">Refunds</a> · <a href="/contact">Contact</a></nav></footer>
+<script defer="True" src="/tools-background.js"></script>
 </body>
 </html>

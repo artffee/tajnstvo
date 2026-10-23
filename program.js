@@ -298,7 +298,7 @@
     active.hidden = true;
     const note = document.getElementById('programNote');
     if (note) note.textContent =
-      'Save your birth profile above first (Generate soul report). The program reads from your in-memory chart and snapshots it.';
+      'Uses the same birth details as your report — fill the form at the top, then begin. The program reads your chart and snapshots it for the 45 days.';
   }
 
   function showActive() {
@@ -315,9 +315,17 @@
       flash('ENGINE NOT READY');
       return;
     }
-    const chart = api.getNatalChart();
+    let chart = api.getNatalChart();
+    if (!chart && api.ensureChartFromForm) {
+      beginBtn.disabled = true;
+      beginBtn.textContent = 'Reading your chart…';
+      try { chart = await api.ensureChartFromForm(); }
+      catch (e) { chart = null; }
+      beginBtn.disabled = false;
+      beginBtn.textContent = 'Begin the 45 days';
+    }
     if (!chart) {
-      flash('SAVE YOUR BIRTH PROFILE FIRST');
+      flash('ADD YOUR BIRTH DETAILS IN THE FORM ABOVE');
       return;
     }
     beginBtn.disabled = true;

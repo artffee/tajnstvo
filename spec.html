@@ -1,106 +1,89 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
 <title>Specification — Tajnstvo</title>
-<meta name="description" content="The architecture and roadmap behind Tajnstvo's celestial atlas." />
-<link rel="canonical" href="https://tajnstvoto.com/spec" />
-<meta name="robots" content="index, follow" />
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css" />
-</head>
+<meta content="The architecture and roadmap behind Tajnstvo's celestial atlas." name="description"/>
+<link href="https://tajnstvoto.com/spec" rel="canonical"/>
+<meta content="index, follow" name="robots"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@300;400;500&amp;family=Instrument+Serif:ital@0;1&amp;display=swap" rel="stylesheet"/>
+<link href="styles.css" rel="stylesheet"/>
+<link href="/site.css" rel="stylesheet"/></head>
 <body>
-
-<canvas id="starfield" aria-hidden="true"></canvas>
-
+<canvas aria-hidden="true" id="starfield"></canvas>
 <header class="topbar">
-  <div class="topbar__inner">
-    <a class="brand" href="/">
-      <span class="brand__glyph" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1">
-          <circle cx="12" cy="12" r="10.5"/><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.5"/>
-          <line x1="12" y1="0.5" x2="12" y2="23.5"/><line x1="0.5" y1="12" x2="23.5" y2="12"/>
-        </svg>
-      </span>
-      <span class="brand__name">TAJNSTVO</span>
-    </a>
-    <nav class="topnav">
-      <a href="/#inside">What's inside</a>
-      <a href="/#faq">FAQ</a>
-      <a href="/">Home</a>
-    </nav>
-    <div class="topbar__meta">
-      <a href="/#hero" class="mono mono--small" style="color:var(--amber)">GET REPORT · $15 →</a>
-    </div>
-  </div>
+<div class="topbar__inner">
+<a class="brand" href="/">
+<span aria-hidden="true" class="brand__glyph">
+<svg fill="none" height="22" stroke="currentColor" stroke-width="1" viewbox="0 0 24 24" width="22">
+<circle cx="12" cy="12" r="10.5"></circle><circle cx="12" cy="12" r="6.5"></circle><circle cx="12" cy="12" r="2.5"></circle>
+<line x1="12" x2="12" y1="0.5" y2="23.5"></line><line x1="0.5" x2="23.5" y1="12" y2="12"></line>
+</svg>
+</span>
+<span class="brand__name">TAJNSTVO</span>
+</a>
+<nav class="topnav">
+<a href="/#inside">What's inside</a>
+<a href="/#faq">FAQ</a>
+<a href="/">Home</a>
+</nav>
+<div class="topbar__meta">
+<a class="mono mono--small" href="/#reading" style="color:var(--amber)">FREE READING</a>
+</div>
+</div>
 </header>
-
 <main id="top">
-  <section class="spec" id="spec">
-    <div class="section__head">
-      <span class="section__num">§ A</span>
-      <h2 class="section__title">Specification</h2>
-      <p class="section__sub">The architecture behind the atlas, in one passage.</p>
-    </div>
-
-    <div class="spec__grid">
-      <div class="spec__col"><h4 class="mono mono--small">ENGINE</h4><p>Custom Schlyter implementation · ecliptic + equatorial frames · ±1° / 1900–2100</p></div>
-      <div class="spec__col"><h4 class="mono mono--small">CHART MATH</h4><p>Julian Day · Newton–Raphson Kepler solver · GMST · whole-sign houses</p></div>
-      <div class="spec__col"><h4 class="mono mono--small">AI · MODEL</h4><p>claude-sonnet-4 · optional live narration via your own key</p></div>
-      <div class="spec__col"><h4 class="mono mono--small">PDF</h4><p>jsPDF · vector chart wheel + world map · rendered in-browser</p></div>
-      <div class="spec__col"><h4 class="mono mono--small">ANIMATION</h4><p>HTML Canvas 2D · 60 fps · CSS keyframes · SVG</p></div>
-      <div class="spec__col"><h4 class="mono mono--small">AUDIO</h4><p>Web Audio API · dual-oscillator Solfeggio tones + procedural fire</p></div>
-      <div class="spec__col"><h4 class="mono mono--small">GEOCODING</h4><p>Photon (OpenStreetMap) · free-text city → lat/lon/timezone</p></div>
-      <div class="spec__col"><h4 class="mono mono--small">PRIVACY</h4><p>Charts computed client-side · no birth data stored · Stripe checkout</p></div>
-    </div>
-
-    <div class="roadmap">
-      <h3 class="roadmap__title">Roadmap</h3>
-      <ol class="roadmap__list">
-        <li>
-          <span class="mono mono--small">v1.0 · LIVE · 2026</span>
-          <p>Soul report &amp; star-map PDFs · Schlyter engine · numerology · synastry · astrocartography · transits · 45-day companion · healing frequencies · frequency reader.</p>
-        </li>
-        <li>
-          <span class="mono mono--small">v1.5 · NEXT</span>
-          <p>Server-side report generation &amp; secure unlock · multi-turn oracle conversations · reading history · aspect timing predictions with date markers · printed star-map fulfilment.</p>
-        </li>
-        <li>
-          <span class="mono mono--small">v2.0 · LATER</span>
-          <p>Native iOS / Android apps · annual PDF transit report · multi-user shared charts · localization (ES, DE, BG, PT).</p>
-        </li>
-      </ol>
-    </div>
-
-    <p class="inside__cta"><a href="/#hero" class="btn btn--solid">Get your Soul Report · $15</a></p>
-  </section>
+<section class="spec" id="spec">
+<div class="section__head">
+<span class="section__num">§ A</span>
+<h2 class="section__title">Specification</h2>
+<p class="section__sub">The architecture behind the atlas, in one passage.</p>
+</div>
+<div class="spec__grid">
+<div class="spec__col"><h4 class="mono mono--small">ENGINE</h4><p>Custom Schlyter implementation · ecliptic + equatorial frames · ±1° / 1900–2100</p></div>
+<div class="spec__col"><h4 class="mono mono--small">CHART MATH</h4><p>Julian Day · Newton–Raphson Kepler solver · GMST · whole-sign houses</p></div>
+<div class="spec__col"><h4 class="mono mono--small">AI · MODEL</h4><p>claude-sonnet-4 · optional live narration via your own key</p></div>
+<div class="spec__col"><h4 class="mono mono--small">PDF</h4><p>jsPDF · vector chart wheel + world map · rendered in-browser</p></div>
+<div class="spec__col"><h4 class="mono mono--small">ANIMATION</h4><p>HTML Canvas 2D · 60 fps · CSS keyframes · SVG</p></div>
+<div class="spec__col"><h4 class="mono mono--small">AUDIO</h4><p>Web Audio API · dual-oscillator Solfeggio tones + procedural fire</p></div>
+<div class="spec__col"><h4 class="mono mono--small">GEOCODING</h4><p>Photon (OpenStreetMap) · confirmed city coordinates · IANA time zones with historical clock changes</p></div>
+<div class="spec__col"><h4 class="mono mono--small">PRIVACY</h4><p>Charts computed in your browser · birth details kept in tab session storage · optional AI shares chart context with Anthropic</p></div>
+</div>
+<div class="roadmap">
+<h3 class="roadmap__title">Roadmap</h3>
+<ol class="roadmap__list">
+<li>
+<span class="mono mono--small">v1.0 · LIVE · 2026</span>
+<p>Soul report &amp; star-map PDFs · Schlyter engine · numerology · synastry · astrocartography · transits · 45-day companion · ambient frequencies · frequency reader.</p>
+</li>
+<li>
+<span class="mono mono--small">v1.5 · NEXT</span>
+<p>Server-side report generation &amp; secure unlock · multi-turn oracle conversations · reading history · aspect timing predictions with date markers · printed star-map fulfilment.</p>
+</li>
+<li>
+<span class="mono mono--small">v2.0 · LATER</span>
+<p>Native iOS / Android apps · annual PDF transit report · multi-user shared charts · localization (ES, DE, BG, PT).</p>
+</li>
+</ol>
+</div>
+<p class="inside__cta"><a class="btn btn--solid" href="/#reading">FREE READING</a></p>
+</section>
 </main>
-
 <footer class="footer">
-  <div class="footer__inner">
-    <div>
-      <div class="brand brand--small">
-        <span class="brand__name">TAJNSTVO</span>
-      </div>
-      <p class="footer__tag mono mono--small">CELESTIAL ATLAS</p>
-    </div>
-    <p class="footer__sig mono mono--small">QUOD SUPRA EST, SICUT QUOD INFRA · © MMXXVI</p>
-  </div>
-</footer>
-
-<script>
-/* minimal starfield for sub-pages */
-(function(){
-  const c=document.getElementById('starfield'); if(!c)return; const x=c.getContext('2d');
-  let stars=[],dpr=Math.min(devicePixelRatio||1,2);
-  function rs(){dpr=Math.min(devicePixelRatio||1,2);c.width=innerWidth*dpr;c.height=innerHeight*dpr;c.style.width=innerWidth+'px';c.style.height=innerHeight+'px';
-    stars=Array.from({length:Math.min(160,Math.floor(innerWidth*innerHeight/12000))},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:(Math.random()*1.1+0.2)*dpr,p:Math.random()*6.28,s:0.3+Math.random()*0.7}));}
-  function d(t){x.clearRect(0,0,c.width,c.height);const tm=t*0.001;for(const s of stars){const tw=0.55+0.45*Math.sin(tm*s.s+s.p);x.globalAlpha=tw;x.fillStyle='rgba(236,232,223,'+(0.5*tw+0.2)+')';x.beginPath();x.arc(s.x,s.y,s.r,0,6.28);x.fill();}x.globalAlpha=1;requestAnimationFrame(d);}
-  rs();requestAnimationFrame(d);addEventListener('resize',rs);
-})();
-</script>
+<div class="footer__inner">
+<div>
+<div class="brand brand--small">
+<span class="brand__name">TAJNSTVO</span>
+</div>
+<p class="footer__tag mono mono--small">CELESTIAL ATLAS</p>
+</div>
+<p class="footer__sig mono mono--small">QUOD SUPRA EST, SICUT QUOD INFRA · © MMXXVI</p>
+</div>
+<nav aria-label="Legal and support"><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/refunds">Refunds</a> · <a href="/contact">Contact</a></nav></footer>
+<script defer="True" src="/spec-background.js"></script>
 </body>
 </html>
