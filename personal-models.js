@@ -1,0 +1,5 @@
+(function(root){'use strict';
+ function validateNotes(value){if(!value||value.version!==1||!Array.isArray(value.entries)||value.entries.length>100)throw new Error('INVALID_JOURNAL');const ids=new Set();return value.entries.map(n=>{if(!n||typeof n.id!=='string'||!/^[a-zA-Z0-9-]{1,80}$/.test(n.id)||typeof n.text!=='string'||!n.text.trim()||n.text.length>12000||typeof n.title!=='string'||n.title.length>100||!Number.isFinite(Date.parse(n.updated)))throw new Error('INVALID_JOURNAL');if(ids.has(n.id))throw new Error('INVALID_JOURNAL');ids.add(n.id);return {id:n.id,title:n.title,text:n.text,updated:new Date(n.updated).toISOString()};});}
+ function compare(first,second,E){const keys=['sun','moon','mercury','venus','mars'];const aspects=E.findAspects(second,first,.8).filter(a=>keys.includes(a.transit)&&keys.includes(a.natal)&&!(a.transit==='moon'&&second.profile.timeUnknown)&&!(a.natal==='moon'&&first.profile.timeUnknown));return aspects.slice(0,5);}
+ root.TajnstvoPersonal={validateNotes,compare};
+})(globalThis);

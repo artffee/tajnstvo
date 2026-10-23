@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
 import {createHash,createHmac,randomBytes,timingSafeEqual} from 'node:crypto';
 
-export const PRODUCTS={report:{name:'Tajnstvo Soul Report — English PDF',amount:1500},starmap:{name:'Tajnstvo Star Map — PDF',amount:900},bundle:{name:'Tajnstvo Soul Report + Star Map — English PDFs',amount:1900}};
+export const PRODUCTS={report:{name:'Tajnstvo Soul Report — English / Bulgarian PDF',amount:1500},starmap:{name:'Tajnstvo Star Map — PDF',amount:900},bundle:{name:'Tajnstvo Soul Report + Star Map — PDFs',amount:1900}};
 export const ORIGIN='https://tajnstvoto.com';
 export function ready(){return process.env.PAYMENTS_ENABLED==='true'&&!!process.env.STRIPE_SECRET_KEY&&!!process.env.STRIPE_WEBHOOK_SECRET&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(process.env.SUPPORT_EMAIL||'');}
 let client;
