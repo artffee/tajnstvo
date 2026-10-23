@@ -85,6 +85,7 @@
     body.textContent=U.choose(lp?.line||'A symbolic numerology number drawn from your birth date.','Символно нумерологично число, получено от цифрите в датата ти на раждане. Използвай го като отправна точка за размисъл, а не като предписание.');life.append(label,h,body);container.append(life);
     document.querySelector('#previewCaveat').textContent=p.timeUnknown?U.choose('Noon-based preview. The Moon may vary. Rising, houses and location-dependent products are omitted until a birth time is known.','Преглед за обяд. Луната може да варира. Асцендентът, домовете и зависимите от часа продукти са пропуснати до уточняване на часа.'):U.choose('A symbolic reading based on approximate astronomical calculations. Take what is useful; your choices remain yours.','Символен прочит на основата на приблизителни астрономически изчисления. Вземи полезното; изборите остават твои.');
     result.hidden=false;
+    document.dispatchEvent(new CustomEvent('tajnstvo:chart',{detail:chart}));
   }
   form.addEventListener('submit',e=>{
     e.preventDefault();if(busy)return;button.disabled=true;

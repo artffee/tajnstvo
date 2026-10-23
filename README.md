@@ -32,3 +32,11 @@ Names and birth profiles stay in the tab. Optional advanced Anthropic access is 
 ## Deployment and rollback
 
 Vercel should use the repository's `vercel.json` build settings and deploy the main branch. Keep payment variables absent while reviewing. The original live source was newer than GitHub main and has been recovered in the preceding recovery commit; preserve that commit for reference. Revert the repair commit to roll back rather than resetting main to the older, incomplete GitHub copy.
+
+## Return experiences
+
+After a free reading, My Sky creates a 1080 × 1350 PNG locally in midnight or parchment style. Birth date and birthplace never enter the exported card model; names are opt-in, and unknown birth times omit Rising. Native file sharing is feature-detected, with a PNG download fallback. Nothing posts automatically.
+
+`/daily` provides a deterministic daily reflection, action and journal question, an optional Sun-sign lens using this tab’s profile, a 60-second timer, and local completion history capped at 31 entries. Its general edition works without birth data. The date follows the visitor’s local calendar; astronomical positions use that date at 12:00 UTC. New content cycles through seven authored themes, with four element-based lenses. This is not AI-generated or a predictive forecast.
+
+`/folklore` introduces Martenitsa, the Surova feast in Pernik and Nestinarstvo in Bulgari. The page links to UNESCO heritage records and distinguishes the original stories from Tajnstvo’s modern reflection prompts and decorative SVG drawings. Both rooms and card controls support English and Bulgarian. No external image/font service or new backend is required.
