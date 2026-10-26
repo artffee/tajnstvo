@@ -27,3 +27,17 @@ test('Bulgarian edition renders all report sections with a Cyrillic font',async(
  const bytes=Buffer.from(doc.output('arraybuffer'));assert.ok(bytes.length>30000);await writeFile('/tmp/tajnstvo-bg-sample.pdf',bytes);
  await assert.rejects(()=>context.TajnstvoBulgarianReport.generate({...E.getNatalChart(),profile:{timeUnknown:true}}),/KNOWN_BIRTH_TIME_REQUIRED/);
 });
+
+test('Unicode fallback wraps with the actual rendered font rather than narrower Times metrics',async()=>{
+ const doc=new context.jspdf.jsPDF({unit:'mm',format:'a4'});
+ await context.TajnstvoReport.installUnicodeText(doc);
+ const paragraph="The Sun is the core of the chart — the conscious self, the will to be, the thing that says 'I am' before anything qualifies it. Here the Sun sits where you are most yourself, most alive, and most asked to shine on purpose.";
+ for(const width of [45,166]){
+  doc.setFont('times','normal');doc.setFontSize(10.5);
+  const lines=doc.splitTextToSize(paragraph,width);
+  for(const line of lines){
+   doc.setFont(/[^\u0000-\u024f]/.test(line)?'astro':'times','normal');
+   assert.ok(doc.getTextWidth(line)<=width+0.1,`Rendered line exceeds ${width}mm: ${line}`);
+  }
+ }
+});

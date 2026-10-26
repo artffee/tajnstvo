@@ -7,13 +7,14 @@ import checkout from '../api/checkout.js';
 import verify from '../api/verify.js';
 import webhook from '../api/webhook.js';
 process.env.STRIPE_WEBHOOK_SECRET='whsec_test_fixture_only';
+process.env.RECEIPT_SIGNING_SECRET='receipt-fixture-only-not-a-real-secret';
 const visitor='a'.repeat(64);
-const paid=()=>({id:'cs_test_123',metadata:{site:'tajnstvo',product:'bundle',client:hash(visitor),fulfilled:'1'},mode:'payment',status:'complete',payment_status:'paid',currency:'usd',amount_total:1900,amount_subtotal:1900,payment_intent:{latest_charge:{paid:true,refunded:false,disputed:false,amount_refunded:0}}});
+const paid=()=>({id:'cs_test_123',livemode:false,metadata:{site:'tajnstvo',product:'bundle',client:hash(visitor),fulfilled:'1'},mode:'payment',status:'complete',payment_status:'paid',currency:'usd',amount_total:1900,amount_subtotal:1900,payment_intent:{latest_charge:{paid:true,refunded:false,disputed:false,amount_refunded:0}}});
 function response(){return {headers:{},setHeader(k,v){this.headers[k]=v},end(v){this.body=JSON.parse(v)}}}
 test('checkout and verification fail closed without payment configuration',async()=>{
  delete process.env.PAYMENTS_ENABLED;assert.equal(ready(),false);
  const r=response();await checkout({method:'POST',headers:{origin:'https://tajnstvoto.com'},body:{product:'bundle'}},r);assert.equal(r.statusCode,503);
- const v=response();await verify({method:'POST',headers:{origin:'https://tajnstvoto.com'},body:{sessionId:'cs_test_fake'}},v);assert.deepEqual(v.body.products,[]);
+ const v=response();await verify({method:'POST',headers:{origin:'https://tajnstvoto.com'},body:{sessionId:'cs_test_fake'}},v);assert.equal(v.statusCode,503);
  assert.equal(sameOrigin({headers:{origin:'https://evil.example'}}),false);
 });
 test('unpaid, wrong amount, currency, site and unfulfilled sessions never unlock',()=>{

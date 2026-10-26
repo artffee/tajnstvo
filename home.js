@@ -94,7 +94,13 @@
   function paintOffers(){
     const checkout=document.querySelector('#checkoutStatus');
     checkout.textContent=C.status.paymentsReady?U.choose('Secure Stripe checkout · one-time purchase · 7-day refund','Сигурно плащане чрез Stripe · еднократна покупка · 7-дневен срок за възстановяване'):U.choose('PDF purchases are being prepared. Your personal preview and all free tools are available.','Подготвяме покупките на PDF. Личният преглед и всички безплатни инструменти са достъпни.');
-    document.querySelectorAll('[data-product]').forEach(b=>{b.disabled=busy||!C.status.paymentsReady;b.textContent=C.has(b.dataset.product)?U.choose('Download again','Изтегли отново'):C.status.paymentsReady?U.choose('Continue to checkout →','Продължи към плащане →'):U.choose('Purchases opening soon','Покупките ще бъдат достъпни скоро');});
+    if(C.status.paymentsReady&&C.status.testMode)checkout.textContent=U.choose('Stripe TEST MODE — no real charges.','ТЕСТОВ РЕЖИМ на Stripe — без реални плащания.');
+    document.querySelector('#restorePurchases').hidden=!C.status.verificationReady;
+    document.querySelectorAll('[data-product]').forEach(b=>{
+      const owned=C.has(b.dataset.product),pending=C.pending(b.dataset.product);
+      b.disabled=busy||pending||(!owned&&!C.status.paymentsReady);
+      b.textContent=owned?U.choose('Download again','Изтегли отново'):pending?U.choose('Payment confirmation pending','Очаква потвърждение'):C.status.paymentsReady?U.choose('Continue to checkout →','Продължи към плащане →'):U.choose('Purchases opening soon','Покупките ще бъдат достъпни скоро');
+    });
   }
   const reportLanguage=document.querySelector('#reportLanguage');
   try{reportLanguage.value=localStorage.getItem('tajnstvo:reportLanguage')||U.lang;}catch{reportLanguage.value=U.lang;}
@@ -116,15 +122,27 @@
       // Payment return must be able to recover the details; do not charge if tab storage is blocked.
       if(!sessionStorage.getItem('tajnstvo:profile'))throw new Error('STORAGE_UNAVAILABLE');
       busy=true;paintOffers();message('Preparing your download or secure checkout…','Подготвяме изтеглянето или сигурното плащане…');
-      await C.verify();if(C.has(b.dataset.product))await download(b.dataset.product);else await C.checkout(b.dataset.product,U.lang);
+      const previouslyOwned=C.has(b.dataset.product);
+      await C.verify();
+      if(previouslyOwned&&!C.has(b.dataset.product))throw new Error('PAYMENT_NOT_VERIFIED');
+      if(C.has(b.dataset.product))await download(b.dataset.product);else await C.checkout(b.dataset.product,U.lang,reportLanguage.value);
     }catch(err){
       if(['CITY_REQUIRED','INVALID_DATE','AMBIGUOUS_TIME','NONEXISTENT_TIME'].includes(err.message)){errorFor(err);form.scrollIntoView({block:'center'});}
       else if(err.message==='STORAGE_UNAVAILABLE')message('This browser blocks tab storage. Enable it before purchasing so your details can be restored.','Браузърът блокира съхранението в раздела. Разреши го преди покупка, за да възстановим данните.',true);
+      else if(err.message==='PAYMENT_PENDING')message('Payment confirmation is pending. Use Check my purchases; do not pay again.','Очаква се потвърждение. Използвай „Провери покупките ми“; не плащай повторно.',true);
       else message('We could not complete this step. No second purchase is needed for a download problem; try again or visit Help.','Стъпката не завърши. Не е нужна повторна покупка при проблем с изтегляне; опитай отново или виж „Контакт“.',true);
     }finally{busy=false;paintOffers();}
   }));
   document.querySelector('#printPreview').addEventListener('click',()=>window.print());
   document.addEventListener('tajnstvo:language',()=>{paintOffers();paintPreview();if(selected)confirmCity(selected);if(chart)message('Your free reading is ready.','Безплатното ти четене е готово.');});
+  document.querySelector('#restorePurchases').addEventListener('click',async()=>{
+    try{
+      await C.verify();
+      if(C.has('report')||C.has('starmap'))message('Purchase found. Enter your birth details and choose Download again.','Покупката е намерена. Въведи данните си и избери „Изтегли отново“.');
+      else if(C.pending('bundle'))message('Confirmation is still pending. Check again shortly; do not pay again.','Потвърждението още се обработва. Провери отново след малко; не плащай повторно.',true);
+      else message('No verified purchase in this browser. If you already paid, contact support with your Stripe receipt; do not buy again.','Няма потвърдена покупка в този браузър. Ако вече си платил, свържи се с поддръжката с разписката от Stripe; не купувай повторно.',true);
+    }catch{message('Purchase checking is temporarily unavailable. Try again later; do not pay twice.','Проверката временно не е достъпна. Опитай по-късно; не плащай два пъти.',true);}
+  });
   C.subscribe(paintOffers);
   (async()=>{
     try{
@@ -137,13 +155,17 @@
     if(params.has('unlock')){params.delete('unlock');history.replaceState({},'',location.pathname+(params.size?'?'+params:'')+location.hash);}
     if(params.get('checkout')==='cancelled')message('Checkout was cancelled. Your free reading is still here.','Плащането е отменено. Безплатното ти четене остава тук.');
     if(!id)return;
+    params.delete('session_id');history.replaceState({},'',location.pathname+(params.size?'?'+params:'')+'#reading');
     message('Checking payment confirmation…','Проверяваме потвърждението за плащане…');
     try{
       let checked;
       for(let attempt=0;attempt<6;attempt++){checked=await C.verify(id);if(!checked.pending)break;await new Promise(r=>setTimeout(r,2000));}
       if(checked.pending){message('Payment confirmation is still pending. Keep this tab and refresh shortly, or contact support with your receipt. Do not pay again.','Потвърждението още се обработва. Запази раздела и презареди след малко или се свържи с поддръжката с разписката. Не плащай отново.',true);return;}
-      params.delete('session_id');history.replaceState({},'',location.pathname+(params.size?'?'+params:'')+'#reading');
-      if(chart){busy=true;paintOffers();await download(C.has('bundle')?'bundle':C.has('report')?'report':'starmap');}
+      if(checked.state!=='paid'){
+        message(checked.state==='refunded'?'This purchase was refunded. Contact support if you need help.':checked.state==='failed'?'Payment failed. No PDF has been unlocked.':'This purchase could not be verified. Contact support with your receipt before purchasing again.',checked.state==='refunded'?'Сумата за тази покупка е възстановена. Свържи се с поддръжката при нужда.':checked.state==='failed'?'Плащането е неуспешно. PDF файлът не е отключен.':'Покупката не е потвърдена. Свържи се с поддръжката с разписката преди нова покупка.',true);return;
+      }
+      reportLanguage.value=checked.reportLanguage;
+      if(chart){busy=true;paintOffers();await download(checked.purchasedProduct);}
       else message('Purchase verified. Re-enter your birth details to download; you will not be charged again in this browser.','Покупката е потвърдена. Въведи отново данните си за изтегляне; няма да бъдеш таксуван повторно в този браузър.');
     }catch{message('Payment could not be verified yet. Keep your receipt and try again; do not pay twice.','Плащането още не може да бъде потвърдено. Запази разписката и опитай отново; не плащай втори път.',true);}finally{busy=false;paintOffers();}
   })();
