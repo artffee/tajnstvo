@@ -8,13 +8,15 @@ Use Node 22 or newer. `npm ci`, `npm test`, `npm run build`, and `npm run dev` (
 
 ## Payment activation — currently off
 
-The production deployment inspected on 26 October 2026 is commit `3439ea7`, with no Vercel project environment variables. `/api/status` reports `paymentsReady:false` and `supportEmail:null`. No successful Stripe sandbox or live purchase has been established. Local tests use an in-memory Stripe adapter, not actual transactions. See [the validation record and launch requirements](docs/PAYMENT_VALIDATION.md).
+The production deployment inspected on 26 October 2026 is commit `3439ea7`, with no production environment variables. Its `/api/status` reports `paymentsReady:false` and `supportEmail:null`. The isolated validation preview has partial sandbox configuration and the owner's confirmed support address, but still lacks a runtime Stripe API key. No successful Stripe sandbox or live purchase has been established. Local tests use an in-memory Stripe adapter, not actual transactions. See [the validation record and launch requirements](docs/PAYMENT_VALIDATION.md).
 
 The public preview and free tools work without credentials. Prices are fixed on the server: $15 report / $9 Star Map / $19 bundle, USD, single purchase. The Stripe SDK remains pinned at 23.0.1 and API version `2026-09-30.endive`.
 
 ### Isolated sandbox setup
 
 Configure a dedicated preview branch, not production. Store keys as sensitive Vercel environment variables, never in Git or chat:
+
+The owner selected **Orion Mind sandbox** (`acct_1ULZfDGeTDDLMfda`) and confirmed **usivaylo@gmail.com** as monitored purchase/refund support. The `fix/paid-report-validation` branch has `SUPPORT_EMAIL`, `PAYMENTS_MODE=test`, `TEST_APP_ORIGIN`, `PAYMENTS_ENABLED=false`, and sensitive receipt/webhook secrets scoped only to Preview. Its dedicated webhook is registered but disabled while the runtime key is missing. Do not modify the sandbox's other products or shared business profile.
 
 - `STRIPE_SECRET_KEY`: a sandbox restricted key with Checkout Session create/read/update and PaymentIntent/Charge read permissions. A test-mode `rk_test_` key is preferred.
 - `STRIPE_WEBHOOK_SECRET`: the sandbox endpoint signing secret.
