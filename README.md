@@ -8,20 +8,41 @@ Use Node 22 or newer. `npm ci`, `npm test`, `npm run build`, and `npm run dev` (
 
 ## Payment activation — currently off
 
-The public preview and free tools work without credentials. Checkout intentionally stays unavailable unless ALL these server environment variables are present:
+The production deployment inspected on 26 October 2026 is commit `3439ea7`, with no production environment variables. Its `/api/status` reports `paymentsReady:false` and `supportEmail:null`. The isolated validation preview has partial sandbox configuration and the owner's confirmed support address, but still lacks a runtime Stripe API key. No successful Stripe sandbox or live purchase has been established. Local tests use an in-memory Stripe adapter, not actual transactions. See [the validation record and launch requirements](docs/PAYMENT_VALIDATION.md).
 
-- `STRIPE_SECRET_KEY`: use a suitably restricted Stripe secret key; never expose it in frontend source.
-- `STRIPE_WEBHOOK_SECRET`: signing secret for the endpoint below.
-- `SUPPORT_EMAIL`: the owner's verified, monitored customer support address.
-- `PAYMENTS_ENABLED=true`: set only after completing test-mode checks.
+The public preview and free tools work without credentials. Prices are fixed on the server: $15 report / $9 Star Map / $19 bundle, USD, single purchase. The Stripe SDK remains pinned at 23.0.1 and API version `2026-09-30.endive`.
 
-Configure `https://tajnstvoto.com/api/webhook` for `checkout.session.completed`, `checkout.session.async_payment_succeeded`, and `checkout.session.async_payment_failed`. Use API version `2026-09-30.endive`, matching the installed Stripe SDK. Ensure the key can create/read/update Checkout Sessions and read expanded PaymentIntents and Charges. Configure receipt emails in Stripe. Prices remain $15 report / $9 star map / $19 bundle, USD, single purchase; these amounts are fixed on the server. Tax configuration, seller identity and policy details need the business owner's review before activation.
+### Isolated sandbox setup
 
-Test with Stripe test-mode credentials first: successful purchase, cancellation, delayed webhook, asynchronous failure, duplicate event delivery, second download, wrong-browser session, refunds, disputes, and mobile download behavior. No live payment was made during this repair. Return URLs are fixed to the production domain; a staging test requires an explicit source/config change to the approved staging origin and webhook, not an arbitrary client-provided callback.
+Configure a dedicated preview branch, not production. Store keys as sensitive Vercel environment variables, never in Git or chat:
 
-The server verifies payment amount, currency, status, webhook fulfillment, charge/refund/dispute state and browser binding before normal download controls grant access. URL parameters or old localStorage flags cannot unlock a purchase. The existing report renderer remains public browser JavaScript: this is not DRM or server-side content protection. Strong paid-content protection requires moving rendering/content behind an authenticated server endpoint in a subsequent change.
+The owner selected **Orion Mind sandbox** (`acct_1ULZfDGeTDDLMfda`) and confirmed **usivaylo@gmail.com** as monitored purchase/refund support. The `fix/paid-report-validation` branch has `SUPPORT_EMAIL`, `PAYMENTS_MODE=test`, `TEST_APP_ORIGIN`, `PAYMENTS_ENABLED=false`, and sensitive receipt/webhook secrets scoped only to Preview. Its dedicated webhook is registered but disabled while the runtime key is missing. Do not modify the sandbox's other products or shared business profile.
 
-The signed receipt cookie supports this browser only, retaining up to three sessions for a year. Birth information stays in sessionStorage, separate from payment records. Customers who clear cookies or change device need support; there is no account-based recovery. Refunds are handled in Stripe by the owner and checked on the next download verification. A webhook secret rotation invalidates old receipt-cookie signatures; retain the original Stripe receipt for support.
+- `STRIPE_SECRET_KEY`: a sandbox restricted key with Checkout Session create/read/update and PaymentIntent/Charge read permissions. A test-mode `rk_test_` key is preferred.
+- `STRIPE_WEBHOOK_SECRET`: the sandbox endpoint signing secret.
+- `RECEIPT_SIGNING_SECRET`: a separate cryptographically random secret of at least 32 characters. Keep it stable; rotating the webhook secret no longer invalidates purchase cookies. Rotating this receipt secret still does.
+- `PAYMENTS_MODE=test`: default when omitted; live keys fail closed in this mode.
+- `TEST_APP_ORIGIN`: the exact approved HTTPS preview origin, with no path, query, credentials or fragment. Return URLs and CSRF checks use this server value, never a request-supplied URL. Local development can explicitly set `http://localhost:4173`.
+- `SUPPORT_EMAIL`: the owner's verified, monitored address. Nothing sends email from this app; this address appears in Checkout and support pages.
+- `PAYMENTS_ENABLED=true`: only in the sandbox preview once its dependencies are configured.
+
+Register `<approved-preview-origin>/api/webhook` in the same sandbox for `checkout.session.completed`, `checkout.session.async_payment_succeeded` and `checkout.session.async_payment_failed`, using the API version above. Fulfillment requires a verified signature and freshly retrieved paid Session/Charge; failed writes return 500 for Stripe retries. Refunds, partial refunds and disputes are checked from Stripe on every download verification. No refund is initiated by this app.
+
+The UI clearly labels enabled test checkout. Check the exact Vercel branch/environment and sandbox account before adding variables. Do not copy preview secrets into production. The application requires its own configured API credential; a connected Stripe tool alone does not provide credentials to the deployed application.
+
+### Live activation gate
+
+Leave live payments disabled until the validation record is complete and the owner approves the reviewed release, business identity, support, policies, tax handling and production configuration. Live checkout requires all the above dependencies plus `PAYMENTS_MODE=live`, a live restricted key, `LIVE_PAYMENTS_APPROVED=true` and `VERCEL_ENV=production`. Live return URLs always use `https://tajnstvoto.com`. These flags are operational safeguards, not a substitute for approval or testing. No live activation is part of this change.
+
+Turning `PAYMENTS_ENABLED` off stops new checkouts while existing purchases can still be verified and downloaded if the verification credentials remain configured. Configure Stripe receipt emails and verify the seller details customers see before launch.
+
+### Purchase recovery and content limitations
+
+The server verifies payment mode, product, amount, currency, fulfillment, refund/dispute state and browser binding. URL parameters and legacy localStorage flags do not grant entitlements. A signed HttpOnly cookie now remembers up to three browser-bound sessions **before redirecting to Stripe**, including pending orders; a lost return redirect no longer loses same-browser recovery. The homepage's **Check my purchases** control rechecks those sessions. Pending orders do not unlock PDFs or permit another overlapping checkout. Selected report language is recorded in Stripe metadata and restored on the success return.
+
+Cookies last one year. Birth data remains in tab sessionStorage and is not sent to the payment server or Stripe. A new tab may require re-entering the birth details. Clearing cookies, using another device, or losing an older session beyond the three-session limit still requires support with the original receipt. There is **no account-based or email recovery**. The support process must be operational before charging.
+
+The existing report renderer/content is public browser JavaScript. Server checks protect the ordinary buttons, **not direct execution of the renderer**. A purchase is not bound to one birth profile. Removing public renderer files alone would break the existing free tools and would not provide a coherent access model. Strong paid-content protection requires an authenticated server generation/delivery design; sending birth data to that server would require a reviewed privacy disclosure. Downloaded copies cannot be revoked. This limitation remains a launch decision, not a completed security fix.
 
 ## Content and privacy
 

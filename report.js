@@ -817,17 +817,21 @@ Provide 3 locations, 3-4 keyAspects (use the tightest from the facts), and 3-4 t
 
   async function installUnicodeText(doc) {
     await loadAstroFont(doc);
-    const original = doc.text.bind(doc);
-    doc.text = function(text, ...args) {
-      if (/[^\u0000-\u024f]/.test(Array.isArray(text) ? text.join(' ') : String(text)) && doc.getFontList().astro) {
-        const font = doc.getFont();
-        doc.setFont('astro', 'normal');
-        const result = original(text, ...args);
-        doc.setFont(font.fontName, font.fontStyle);
-        return result;
-      }
-      return original(text, ...args);
-    };
+    // Wrapping and width measurement must use the same font as drawing.
+    // Switching only in text() measured Times but drew wider DejaVu lines,
+    // cutting off English paragraphs containing a typographic dash or quote.
+    for (const method of ['text', 'splitTextToSize', 'getTextWidth']) {
+      const original = doc[method].bind(doc);
+      doc[method] = function(text, ...args) {
+        if (/[^\u0000-\u024f]/.test(Array.isArray(text) ? text.join(' ') : String(text)) && doc.getFontList().astro) {
+          const font = doc.getFont();
+          doc.setFont('astro', 'normal');
+          try { return original(text, ...args); }
+          finally { doc.setFont(font.fontName, font.fontStyle); }
+        }
+        return original(text, ...args);
+      };
+    }
   }
 
   function prettyDate(iso) {
@@ -874,7 +878,13 @@ Provide 3 locations, 3-4 keyAspects (use the tightest from the facts), and 3-4 t
     const BOTTOM = H - 22;
     const ord = (n) => n + (n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th');
     function startPage(label) { doc.addPage(); pageFrame(0, 0, label); y = 34; }
-    function ensure(space) { if (y + space > BOTTOM) { doc.addPage(); pageFrame(0, 0, curLabel + '  (CONT.)'); y = 34; } }
+    function ensure(space) {
+      if (y + space > BOTTOM) {
+        const font=doc.getFont(),size=doc.getFontSize(),color=doc.getTextColor();
+        doc.addPage();pageFrame(0, 0, curLabel + '  (CONT.)');y=34;
+        doc.setFont(font.fontName,font.fontStyle);doc.setFontSize(size);doc.setTextColor(color);
+      }
+    }
     function gap(n) { y += n; }
     function bigTitle(t) { setText(text); doc.setFont('times', 'normal'); doc.setFontSize(22); doc.text(t, M, y); rule(y + 4); y += 13; }
     function subHead(t) { ensure(11); setText(text); doc.setFont('times', 'italic'); doc.setFontSize(13); doc.text(t, M, y); y += 6; }
