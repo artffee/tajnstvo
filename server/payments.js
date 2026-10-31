@@ -2,6 +2,7 @@ import Stripe from 'stripe';
 import {createHash,createHmac,randomBytes,timingSafeEqual} from 'node:crypto';
 
 export const PRODUCTS={report:{name:'Tajnstvo Soul Report — English / Bulgarian PDF',amount:1500},starmap:{name:'Tajnstvo Star Map — PDF',amount:900},bundle:{name:'Tajnstvo Soul Report + Star Map — PDFs',amount:1900}};
+export const RECEIPT_LIMIT = 3;
 export const ORIGIN='https://tajnstvoto.com';
 export function paymentMode(){return process.env.PAYMENTS_MODE==='live'?'live':'test';}
 export function appOrigin(){
@@ -29,8 +30,8 @@ export function cookie(name,value){return `${name}=${value}; Path=/; HttpOnly; S
 export function clientId(req){const v=cookies(req).tajnstvo_client;return /^[a-f0-9]{64}$/.test(v||'')?v:randomBytes(32).toString('hex');}
 export const hash=s=>createHash('sha256').update(s).digest('hex');
 export function safeEqual(a,b){if(typeof a!=='string'||typeof b!=='string')return false;const aa=Buffer.from(a),bb=Buffer.from(b);return aa.length===bb.length&&timingSafeEqual(aa,bb);}
-export function signedReceipts(ids){const body=Buffer.from(JSON.stringify([...new Set(ids)].slice(-3))).toString('base64url');return body+'.'+createHmac('sha256',process.env.RECEIPT_SIGNING_SECRET).update(body).digest('hex');}
-export function receipts(req){try{const [body,sig,extra]=(cookies(req).tajnstvo_receipts||'').split('.');if(extra!==undefined)return [];const expected=createHmac('sha256',process.env.RECEIPT_SIGNING_SECRET).update(body||'').digest('hex');if(!safeEqual(sig,expected))return [];const ids=JSON.parse(Buffer.from(body,'base64url'));return Array.isArray(ids)?ids.filter(x=>/^cs_(test_|live_)?[A-Za-z0-9]+$/.test(x)).slice(-3):[];}catch{return [];}}
+export function signedReceipts(ids){const body=Buffer.from(JSON.stringify([...new Set(ids)].slice(-RECEIPT_LIMIT))).toString('base64url');return body+'.'+createHmac('sha256',process.env.RECEIPT_SIGNING_SECRET).update(body).digest('hex');}
+export function receipts(req){try{const [body,sig,extra]=(cookies(req).tajnstvo_receipts||'').split('.');if(extra!==undefined)return [];const expected=createHmac('sha256',process.env.RECEIPT_SIGNING_SECRET).update(body||'').digest('hex');if(!safeEqual(sig,expected))return [];const ids=JSON.parse(Buffer.from(body,'base64url'));return Array.isArray(ids)?ids.filter(x=>/^cs_(test_|live_)?[A-Za-z0-9]+$/.test(x)).slice(-RECEIPT_LIMIT):[];}catch{return [];}}
 export function belongsToSite(s){const product=Object.hasOwn(PRODUCTS,s?.metadata?.product||'')&&PRODUCTS[s.metadata.product];return !!product&&s.metadata.site==='tajnstvo'&&s.livemode===(paymentMode()==='live')&&s.mode==='payment'&&s.currency==='usd'&&s.amount_total===product.amount&&s.amount_subtotal===product.amount;}
 export function validSession(s,requireFulfillment=true){
   return belongsToSite(s)&&s.status==='complete'&&s.payment_status==='paid'&&(!requireFulfillment||s.metadata.fulfilled==='1');
@@ -43,9 +44,21 @@ export async function readJSON(req){
   if(!raw)for await(const part of req){raw+=part;if(raw.length>8192)throw new Error('BODY_TOO_LARGE');}
   return JSON.parse(raw||'{}');
 }
+export function isPaidOrPending({state}) {
+  return state === 'paid' || state === 'pending';
+}
+
+export function recoveryIds(sessions, newCheckoutId) {
+  const attempts = sessions.filter(s => s.state === 'open' || s.state === 'failed').map(s => s.id);
+  if (newCheckoutId) attempts.push(newCheckoutId);
+  const purchases = sessions.filter(isPaidOrPending).map(s => s.id);
+  return [...new Set([...attempts, ...purchases])].slice(-RECEIPT_LIMIT);
+}
+
 export async function verifiedEntitlements(api,ids,visitor){
-  const products=new Set(),validIds=[],sessions=[];
-  for(const id of [...new Set(ids)].slice(-3)){
+  const products=new Set(),sessions=[];
+  // Check the signed cookie and one return ID before deciding what to retain.
+  for(const id of [...new Set(ids)].slice(0, RECEIPT_LIMIT + 1)){
     let s;
     try{s=await api.checkout.sessions.retrieve(id,{expand:['payment_intent.latest_charge']});}
     catch(error){if(error.code==='resource_missing')continue;throw error;}
@@ -60,11 +73,9 @@ export async function verifiedEntitlements(api,ids,visitor){
     else if(s.status==='complete')state='pending';
     else if(s.status==='open')state='open';
     sessions.push({id,product:s.metadata.product,state,reportLanguage:s.metadata.report_language==='bg'?'bg':'en'});
-    // Keep browser-bound pending orders, including when the Stripe return page was never reached.
-    if(['paid','pending','open','failed'].includes(state))validIds.push(id);
     if(state!=='paid')continue;
     products.add(s.metadata.product);
     if(s.metadata.product==='bundle'){products.add('report');products.add('starmap');}
   }
-  return {products:[...products],ids:validIds,sessions};
+  return {products:[...products],ids:recoveryIds(sessions),sessions};
 }

@@ -1,4 +1,4 @@
-import {PRODUCTS,appOrigin,paymentMode,ready,stripe,json,sameOrigin,clientId,cookie,hash,readJSON,receipts,signedReceipts,verifiedEntitlements} from '../server/payments.js';
+import {PRODUCTS,appOrigin,paymentMode,ready,stripe,json,sameOrigin,clientId,cookie,hash,readJSON,receipts,signedReceipts,verifiedEntitlements,isPaidOrPending,recoveryIds,RECEIPT_LIMIT} from '../server/payments.js';
 export const createCheckoutHandler=(getStripe=stripe)=>async function handler(req,res){
   if(req.method!=='POST')return json(res,405,{error:'Method not allowed'});
   if(!sameOrigin(req))return json(res,403,{error:'Invalid origin'});
@@ -11,6 +11,9 @@ export const createCheckoutHandler=(getStripe=stripe)=>async function handler(re
     const api=getStripe(),prior=await verifiedEntitlements(api,receipts(req),visitor);
     if(prior.products.includes(body.product))return json(res,409,{error:'ALREADY_PURCHASED'});
     if(prior.sessions.some(s=>s.state==='pending'&&(s.product===body.product||s.product==='bundle'||body.product==='bundle')))return json(res,409,{error:'PAYMENT_PENDING'});
+    if (prior.sessions.filter(isPaidOrPending).length >= RECEIPT_LIMIT) {
+      return json(res, 409, {error: 'PURCHASE_RECOVERY_LIMIT'});
+    }
     const lang=body.lang==='bg'?'bg':'en',reportLanguage=body.reportLanguage==='bg'?'bg':'en';
     const tag=Array.from(Buffer.from(hash(visitor+requestId).slice(0,16),'hex'),v=>String.fromCharCode(97+v%26)).join('');
     res.setHeader('Set-Cookie',cookie('tajnstvo_client',visitor));
@@ -23,7 +26,7 @@ export const createCheckoutHandler=(getStripe=stripe)=>async function handler(re
     },{idempotencyKey:'tajnstvo-'+hash(visitor+requestId+body.product+lang+reportLanguage)});
     if(!s.url?.startsWith('https://checkout.stripe.com/')||s.livemode!==(paymentMode()==='live'))throw new Error('INVALID_CHECKOUT');
     // Remember the order before navigation, even if the return page is never reached.
-    res.setHeader('Set-Cookie',[cookie('tajnstvo_client',visitor),cookie('tajnstvo_receipts',signedReceipts([...prior.ids,s.id]))]);json(res,200,{url:s.url});
+    res.setHeader('Set-Cookie',[cookie('tajnstvo_client',visitor),cookie('tajnstvo_receipts',signedReceipts(recoveryIds(prior.sessions,s.id)))]);json(res,200,{url:s.url});
   }catch{json(res,502,{error:'CHECKOUT_FAILED'});}
 };
 export default createCheckoutHandler();

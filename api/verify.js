@@ -7,7 +7,7 @@ export const createVerifyHandler=(getStripe=stripe)=>async function handler(req,
     const body=await readJSON(req),ids=receipts(req),newId=body.sessionId;
     if(newId&&!/^cs_(test_|live_)?[A-Za-z0-9]+$/.test(newId))return json(res,400,{error:'INVALID_SESSION'});
     if(newId&&!ids.includes(newId))ids.push(newId);
-    const result=await verifiedEntitlements(getStripe(),ids.slice(-3),clientId(req));
+    const result=await verifiedEntitlements(getStripe(),ids,clientId(req));
     res.setHeader('Set-Cookie',cookie('tajnstvo_receipts',signedReceipts(result.ids)));
     const current=result.sessions.find(s=>s.id===newId);
     json(res,200,{products:result.products,pending:current?.state==='pending',state:newId?(current?.state||'unavailable'):null,

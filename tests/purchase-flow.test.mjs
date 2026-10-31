@@ -41,7 +41,7 @@ function fixture(){
     return res;
   }
   async function purchase(product='report',reportLanguage='en'){
-    const res=await request('checkout',{product,lang:'en',reportLanguage,requestId:'12345678-1234-4234-8234-123456789abc',birthDate:'must-not-be-sent',name:'PRIVATE',success_url:'https://evil.example'});
+    const res=await request('checkout',{product,lang:'en',reportLanguage,requestId:'12345678-1234-4234-8234-123456789abc',birthDate:'must-not-be-sent',name:'PRIVATE',birthTime:'04:37',cityName:'PrivateCity',lat:12.34567,lon:76.54321,chart:'PrivateChart',success_url:'https://evil.example'});
     assert.equal(res.statusCode,200);return [...sessions.values()].at(-1);
   }
   async function event(s,type='checkout.session.completed',bad=false){
@@ -70,7 +70,9 @@ test('all fixed prices and both report languages survive Checkout; birth data ne
     assert.equal(params.success_url,origin+'/?session_id={CHECKOUT_SESSION_ID}#reading');
     assert.equal(params.cancel_url,origin+'/?checkout=cancelled#reading');
     assert.equal(params.payment_method_types,undefined);
-    assert.doesNotMatch(JSON.stringify(params),/PRIVATE|must-not-be-sent|evil.example/);
+    assert.deepEqual(Object.keys(params.metadata).sort(), ['client','product','report_language','site']);
+    assert.deepEqual(Object.keys(params.payment_intent_data.metadata).sort(), ['product','site']);
+    assert.doesNotMatch(JSON.stringify(params),/PRIVATE|must-not-be-sent|04:37|PrivateCity|12\.34567|76\.54321|PrivateChart|evil\.example/);
     f.pay(s);assert.equal((await f.event(s)).statusCode,200);
     const checked=await f.request('verify',{sessionId:s.id});
     assert.equal(checked.body.state,'paid');assert.equal(checked.body.reportLanguage,lang);assert.equal(checked.body.purchasedProduct,product);
@@ -141,4 +143,52 @@ test('malformed unicode comparisons and oversized pre-parsed JSON fail safely',a
   assert.equal(safeEqual('é','a'),false);
   await assert.rejects(()=>readJSON({body:{data:'a'.repeat(9000)}}),/BODY_TOO_LARGE/);
   await assert.rejects(()=>readJSON({body:'a'.repeat(9000)}),/BODY_TOO_LARGE/);
+});
+
+test('abandoned checkouts cannot displace a paid same-browser receipt', async () => {
+  const f = fixture();
+  const paid = await f.purchase('report');
+  f.pay(paid);
+  await f.event(paid);
+  for (let i = 1; i <= 4; i++) {
+    const attempt = await f.request('checkout', {
+      product: 'starmap', requestId: '12345678-1234-4234-8234-' + String(i).padStart(12, '0')
+    });
+    assert.equal(attempt.statusCode, 200);
+  }
+  const ids = receipts({headers: {cookie: f.jar}});
+  assert.equal(ids.length, 3);
+  assert.ok(ids.includes(paid.id));
+  assert.deepEqual((await f.request('verify', {})).body.products, ['report']);
+});
+
+test('a missing return session cannot evict a receipt from a full cookie', async () => {
+  const f = fixture();
+  const paid = await f.purchase('report');
+  for (const lang of ['en', 'bg']) await f.purchase('starmap', lang);
+  f.pay(paid);
+  await f.event(paid);
+  const checked = await f.request('verify', {sessionId: 'cs_test_missing'});
+  assert.equal(checked.body.state, 'unavailable');
+  assert.deepEqual(checked.body.products, ['report']);
+  assert.ok(receipts({headers: {cookie: f.jar}}).includes(paid.id));
+});
+
+test('a full cookie of unsettled purchases prevents another checkout', async () => {
+  const f = fixture();
+  for (let i = 1; i <= 3; i++) {
+    const opened = await f.request('checkout', {
+      product: 'report', requestId: '12345678-1234-4234-8234-' + String(i).padStart(12, '0')
+    });
+    assert.equal(opened.statusCode, 200);
+  }
+  // Earlier tabs may complete while webhook fulfillment is still pending.
+  for (const session of f.sessions.values()) f.pay(session);
+  const attempt = await f.request('checkout', {
+    product: 'starmap', requestId: '12345678-1234-4234-8234-000000000004'
+  });
+  assert.equal(attempt.statusCode, 409);
+  assert.equal(attempt.body.error, 'PURCHASE_RECOVERY_LIMIT');
+  assert.equal(f.sessions.size, 3);
+  assert.deepEqual(receipts({headers: {cookie: f.jar}}).sort(), [...f.sessions.keys()].sort());
 });

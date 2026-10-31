@@ -2,6 +2,31 @@
 
 **Status: NOT READY FOR LIVE CHARGES.** This record separates observed production behavior, local simulations, and work still requiring real Stripe sandbox credentials. Prices remain $15 / $9 / $19 USD. No production environment settings or live Stripe objects were changed.
 
+## 31 October 2026 follow-up
+
+**Stripe-hosted payment verification is blocked. Production payments are disabled.** The following checks started from PR #4 at `9b31b19e`. The October 26 observations below are retained as a historical record.
+
+| Check | October 31 evidence |
+| --- | --- |
+| Stripe | The connected Orion Mind sandbox reports `livemode:false`. Tajnstvo endpoint `we_1UUsjnGeTDDLMfdaXCKW2Zwz` is disabled. Its destination is the PR branch's `/api/webhook` and its enabled event types are Checkout completed, async success and async failure. |
+| Vercel | The stable Preview alias served deployment `dpl_6ioKB2sDQMvjZV4KTzMuhLhh16ac` for `9b31b19e`. The six existing variables are scoped to Preview and `fix/paid-report-validation`. The runtime key is absent. The branch flag is false and the mode is test. The project returned zero hidden production variables and no production-targeted entries. |
+| Deployed endpoints | The branch returned HTTP 200 with `paymentsReady:false`, `verificationReady:false`, `testMode:true`. Production returned HTTP 200 with `paymentsReady:false`. Both rejected a same-origin Checkout POST with HTTP 503 and `CHECKOUT_UNAVAILABLE`. |
+| Actual Stripe transactions | Zero transactions were run for this verification. The connected Stripe API exposes no restricted-key provisioning operation, and the sandbox API Keys Dashboard requires sign-in. No runtime key, webhook state or payment flag was changed. |
+| Local handlers | The original 29 tests passed. With the receipt fixes below, 32 tests pass. Tests use Stripe SDK signature helpers and an in-memory payment adapter. They cover all six product/language combinations at $15, $9 and $19 USD, simulated success, failure, cancellation, expiry, delayed fulfillment, retries, refunds and disputes. The build passed. |
+| Browser files | Headless Chromium 153 exercised the normal purchase buttons, success-return URL and repeat-download buttons with local fixtures for Checkout and verification. Four scenarios ran in two fresh browser layouts each (desktop and emulated Pixel 7). For the fictional Sofia profile, the English report had 22 pages, Bulgarian personal report 13, and Star Map one. The Bulgarian bundle saved both files. All eight scenarios produced one fixture Checkout each across initial delivery and repeat download. All 20 saved files reopened without repair. Every page rasterized and had text, no extracted words fell outside page bounds (1 pt tolerance), and representative pages were visually inspected. The test browser accepted multiple downloads. Stripe-hosted UI, a physical phone, iOS Safari and its download prompts still require testing. |
+| Privacy | Browser requests to Tajnstvo's Checkout handler contained only product, interface language, report language and request ID. Separate handler tests captured the exact request body built for Stripe. Injected birth name, date, time, city, coordinates and chart content were absent. The provider-side request log still requires a genuine sandbox session. |
+
+### Same-browser recovery corrections
+
+Two regression cases failed on the original PR head. Starting several new checkouts could push an older paid receipt out of the three slots, and opening an unknown return ID could evict a valid receipt before Stripe ownership checks. The changes prioritize paid and pending purchases over abandoned attempts. Verification examines the signed IDs and one candidate return ID before rewriting the cookie. When all three slots protect purchases, Checkout refuses to start another session and explains how to get help in either language. The existing signed-cookie format is preserved.
+
+### Activation and launch decisions
+
+1. In the **Orion Mind sandbox**, create a dedicated Tajnstvo restricted test key. Grant Checkout Sessions write (including read and metadata updates), PaymentIntents read and Charges read. Configure `STRIPE_SECRET_KEY` as a server-only **Sensitive** variable on Vercel project `tajnstvo`, environment **Preview**, Git branch `fix/paid-report-validation` only. Keep the value in the provider secret fields.
+2. Redeploy the preview with Checkout still paused. Confirm the branch alias serves the intended commit, `verificationReady:true`, `testMode:true`, and `paymentsReady:false`. Readiness validates configuration shape only. Verify the key actually permits inline pricing, expanded charge reads and webhook fulfillment during the hosted tests.
+3. Enable just the named Tajnstvo sandbox endpoint, set this branch's `PAYMENTS_ENABLED=true` and redeploy the preview. Recheck production is disabled. From this preview, run the four purchases, decline, cancellation, delayed/failed methods where available, lost redirect, repeats, expiration, full and partial refunds, webhook delivery/retry, privacy logs, and on-device downloads. Record Stripe Session/event references and delivery responses. Pause the branch and endpoint again if the setup is unusable.
+4. Live activation requires approval for the public browser renderer or private fulfillment, a support and cross-device recovery policy, and the legal seller, receipt and statement details, refund terms and tax handling. A successful test transaction alone does not approve launch.
+
 ## Inspected state
 
 - Repository: `artffee/tajnstvo`, `main` at `3439ea7fb7ff1ff6c95a8d900d5955134066a499` (merged PR #3).

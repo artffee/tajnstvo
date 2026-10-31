@@ -129,6 +129,9 @@
     }catch(err){
       if(['CITY_REQUIRED','INVALID_DATE','AMBIGUOUS_TIME','NONEXISTENT_TIME'].includes(err.message)){errorFor(err);form.scrollIntoView({block:'center'});}
       else if(err.message==='STORAGE_UNAVAILABLE')message('This browser blocks tab storage. Enable it before purchasing so your details can be restored.','Браузърът блокира съхранението в раздела. Разреши го преди покупка, за да възстановим данните.',true);
+      else if(err.message==='PURCHASE_RECOVERY_LIMIT')message(
+        'This browser is already tracking three purchases. Check your purchases or contact support before starting another.',
+        'В този браузър вече се пазят три покупки. Провери покупките си или се свържи с поддръжката, преди да започнеш нова.',true);
       else if(err.message==='PAYMENT_PENDING')message('Payment confirmation is pending. Use Check my purchases; do not pay again.','Очаква се потвърждение. Използвай „Провери покупките ми“; не плащай повторно.',true);
       else message('We could not complete this step. No second purchase is needed for a download problem; try again or visit Help.','Стъпката не завърши. Не е нужна повторна покупка при проблем с изтегляне; опитай отново или виж „Контакт“.',true);
     }finally{busy=false;paintOffers();}
