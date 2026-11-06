@@ -8,6 +8,8 @@
     document.querySelectorAll('[data-placeholder-en]').forEach(el=>{el.placeholder=el.dataset[lang==='bg'?'placeholderBg':'placeholderEn'];});
     document.querySelectorAll('[data-language]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.language===lang)));
     try{localStorage.setItem('tajnstvo:lang',lang);}catch{}
+    const structured=document.getElementById('discovery-faq');
+    if(structured){const data=JSON.parse(structured.textContent);data.inLanguage=lang;data.mainEntity=[...document.querySelectorAll('details')].filter(d=>d.querySelector('summary')).map(d=>({'@type':'Question',name:d.querySelector('summary').textContent.trim(),acceptedAnswer:{'@type':'Answer',text:[...d.children].filter(el=>el.tagName!=='SUMMARY').map(el=>el.textContent.trim()).join(' ')}}));structured.textContent=JSON.stringify(data);}
     document.dispatchEvent(new Event('tajnstvo:language'));
   }
   document.querySelectorAll('[data-language]').forEach(b=>b.addEventListener('click',()=>applyLanguage(b.dataset.language)));
